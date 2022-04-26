@@ -1,6 +1,6 @@
 from app.configs.database import db
 from flask import jsonify, request
-from ipdb import set_trace
+#from ipdb import set_trace
 from app.exc.user_exc import InvalidKeysError, InvalidValuesError, InvalidUserError
 from http import HTTPStatus
 from psycopg2.errors import UniqueViolation
