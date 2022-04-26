@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import create_access_token
 
 
-from app.models.user_model import UserModel
+from app.models.user_model import UserModel, UserModelSchema
 
 
 def create_user():
@@ -49,7 +49,9 @@ def login():
         if not user or not user.check_password(data["password"]):
             raise InvalidUserError
 
-        token = create_access_token()
+        token = create_access_token(UserModelSchema(only=("name", "email")).dump(user))
+
+        return {"token": token}
 
     except InvalidKeysError as e:
         return e.message, HTTPStatus.BAD_REQUEST
