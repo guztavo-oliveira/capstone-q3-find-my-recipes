@@ -1,6 +1,6 @@
-from marshmallow import Schema, fields
 from app.configs.database import db
-from sqlalchemy import Column, ForeignKey, Integer, String
+from marshmallow import Schema, fields
+from sqlalchemy import Column, Integer, String
 
 
 class IngredientSchema(Schema):

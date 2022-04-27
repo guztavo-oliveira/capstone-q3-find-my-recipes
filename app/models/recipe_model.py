@@ -1,10 +1,10 @@
 import enum
+from uuid import uuid4
 
 from app.configs.database import db
 from marshmallow import Schema, fields
 from sqlalchemy import Column, Enum, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
-from uuid import uuid4
 
 
 class MyEnum(enum.Enum):
