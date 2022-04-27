@@ -25,7 +25,7 @@ class UserModel(db.Model):
     account_type = Column(String, nullable=False)
 
     # Relationship to bring back the recipes favorited by the user
-    # favorites = relationship("recipe_model", secondary='favorites')
+    favorites = relationship("recipe_model", secondary="favorites")
 
     @property
     def password(self):
