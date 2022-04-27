@@ -1,22 +1,22 @@
-from email.policy import default
 from app.configs.database import db
-from dataclasses import dataclass
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.dialects.postgresql import UUID
 from uuid import uuid4
+from marshmallow import Schema, fields
 
 
-@dataclass
+class UserModelSchema(Schema):
+    user_id = fields.Int()
+    name = fields.Str()
+    email = fields.Str()
+    # account_type = fields.Str()
+
+
 class UserModel(db.Model):
 
     __tablename__ = "user"
-
-    user_id: int
-    name: str
-    email: str
-    account_type: str
 
     user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     name = Column(String, nullable=False)
