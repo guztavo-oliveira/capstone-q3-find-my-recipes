@@ -2,7 +2,7 @@ import enum
 
 from app.configs.database import db
 from marshmallow import Schema, fields
-from sqlalchemy import Column, Enum, ForeignKey, Integer, String
+from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from uuid import uuid4
 
@@ -32,7 +32,7 @@ class RecipeModel(db.Model):
     title = Column(String, nullable=False)
     time = Column(String, nullable=False)
     type = Column(String, nullable=False)
-    method = Column(String, nullable=False)
+    method = Column(Text, nullable=False)
     status = Column(Enum(MyEnum), nullable=False)
     serves = Column(Integer, nullable=False)
     img_link = Column(String, nullable=False)
