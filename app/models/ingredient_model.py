@@ -1,6 +1,9 @@
-from marshmallow import Schema, fields
 from app.configs.database import db
+from marshmallow import Schema, fields
 from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
+
+from .recipe_model import RecipeModel
 
 
 class IngredientSchema(Schema):
@@ -16,3 +19,7 @@ class IngredientModel(db.Model):
 
     ingredient_id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False, unique=True)
+
+    recipes = relationship(
+        "IngredientModel", secondary=RecipeModel, back_populates="ingredients"
+    )
