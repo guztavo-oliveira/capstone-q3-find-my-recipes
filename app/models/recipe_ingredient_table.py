@@ -7,7 +7,6 @@ from sqlalchemy import Column, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import validates
 
 
-
 class RecipeIngredientSchema(Schema):
     recipe_ingredient_id = fields.Int()
     recipe_id = fields.Int()
@@ -17,7 +16,7 @@ class RecipeIngredientSchema(Schema):
 
 
 class UnitEnum(enum.Enum):
-    QUILO = "kg" 
+    QUILO = "kg"
     GRAMA = "g"
     LITRO = "l"
     MILILITRO = "ml"
@@ -31,8 +30,10 @@ class RecipeIngredientModel(db.Model):
     __tablename__ = "recipe_ingredient"
 
     recipe_ingredient_id = Column(Integer, primary_key=True)
-    # recipe_id = Column(Integer, ForeignKey("recipe.recipe_id"), nullable=False)
-    ingredient_id = Column(Integer, ForeignKey("ingredient.ingredient_id"), nullable=False)
+    recipe_id = Column(Integer, ForeignKey("recipes.recipe_id"), nullable=False)
+    ingredient_id = Column(
+        Integer, ForeignKey("ingredient.ingredient_id"), nullable=False
+    )
     unit = Column(Enum(UnitEnum), nullable=False)
     amount = Column(Float, nullable=False)
 

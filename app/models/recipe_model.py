@@ -1,10 +1,12 @@
 import enum
+from uuid import uuid4
 
 from app.configs.database import db
 from marshmallow import Schema, fields
 from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
-from uuid import uuid4
+from sqlalchemy.orm import relationship
+from .recipe_ingredient_table import RecipeIngredientModel
 
 
 class MyEnum(enum.Enum):
@@ -38,3 +40,9 @@ class RecipeModel(db.Model):
     img_link = Column(String, nullable=False)
 
     user_id = Column(UUID(as_uuid=True), ForeignKey("user.user_id"), default=uuid4)
+
+    user = relationship("UserModel", back_populates="recipe_favorites")
+
+    ingredients = relationship(
+        "IngredientModel", secondary=RecipeIngredientModel, back_populates="recipes"
+    )
