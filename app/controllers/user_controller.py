@@ -35,7 +35,7 @@ def create_user():
         if isinstance(e.orig, UniqueViolation):
             return {"msg": "Email already in use!"}, HTTPStatus.BAD_REQUEST
 
-    return jsonify(user), HTTPStatus.CREATED
+    return UserModelSchema(only=('name', 'email')).dump(user), HTTPStatus.CREATED
 
 
 def login():
@@ -49,7 +49,7 @@ def login():
         if not user or not user.check_password(data["password"]):
             raise InvalidUserError
 
-        token = create_access_token(UserModelSchema(only=("name", "email")).dump(user))
+        token = create_access_token(UserModelSchema(only=("name", "email", "user_id")).dump(user))
 
         return {"token": token}
 
