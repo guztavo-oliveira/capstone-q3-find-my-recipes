@@ -44,5 +44,5 @@ class RecipeModel(db.Model):
     user = relationship("UserModel", back_populates="recipe_favorites")
 
     ingredients = relationship(
-        "IngredientModel", secondary=RecipeIngredientModel, back_populates="recipes"
+        "IngredientModel", secondary="recipe_ingredient", back_populates="recipes"
     )

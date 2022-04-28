@@ -20,5 +20,5 @@ class IngredientModel(db.Model):
     title = Column(String, nullable=False, unique=True)
 
     recipes = relationship(
-        "IngredientModel", secondary=RecipeModel, back_populates="ingredients"
+        "RecipeModel", secondary="recipe_ingredient", back_populates="ingredients"
     )
