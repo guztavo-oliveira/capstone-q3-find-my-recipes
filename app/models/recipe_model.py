@@ -20,7 +20,7 @@ class RecipeModelSchema(Schema):
     time = fields.Str()
     type = fields.Str()
     method = fields.Str()
-    status = fields.Int()
+    status = fields.Str()
     serves = fields.Int()
     img_link = fields.Str()
     user_id = fields.Int()
@@ -35,7 +35,7 @@ class RecipeModel(db.Model):
     time = Column(String, nullable=False)
     type = Column(String, nullable=False)
     method = Column(Text, nullable=False)
-    status = Column(Enum(MyEnum), nullable=False)
+    status = Column(Enum(MyEnum), nullable=False, default="NOT_VERIFIED")
     serves = Column(Integer, nullable=False)
     img_link = Column(String, nullable=False)
 
