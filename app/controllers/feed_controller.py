@@ -1,5 +1,4 @@
 from http import HTTPStatus
-
 from app.configs.database import db
 from app.models.feed_model import FeedModel, FeedModelSchema
 from flask import jsonify, request
@@ -7,12 +6,29 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy.orm.session import Session
 from datetime import datetime as dt
 
-
+@jwt_required()
 def get_publications():
 
-    feed_list = FeedModel.query.all()
+    try: 
+        per_page = request.args.get("per_page")
+        page = request.args.get("page")
+        query = FeedModel.query.limit(per_page).offset(page)
+        feed_list = query.all()
+    
+    except:
+        feed_list = FeedModel.query.all()
 
     return jsonify(feed_list), HTTPStatus.OK
+
+@jwt_required()
+def get_a_publication(post_id:int):
+    
+    publication = FeedModel.query.filter_by(feed_id=post_id).one_or_none()
+    
+    if publication == None:
+        return {"error": "ID inválida"}, HTTPStatus.BAD_REQUEST
+    
+    return jsonify(publication), HTTPStatus.OK
 
 
 @jwt_required()
