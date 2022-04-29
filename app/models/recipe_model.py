@@ -35,7 +35,7 @@ class RecipeModel(db.Model):
     time = Column(String, nullable=False)
     type = Column(String, nullable=False)
     method = Column(Text, nullable=False)
-    status = Column(Enum(MyEnum), nullable=False, default="NOT_VERIFIED")
+    status = Column(Enum(MyEnum), nullable=False)
     serves = Column(Integer, nullable=False)
     img_link = Column(String, nullable=False)
 
