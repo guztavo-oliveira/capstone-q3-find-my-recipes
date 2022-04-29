@@ -34,8 +34,8 @@ class RecipeIngredientModel(db.Model):
     ingredient_id = Column(
         Integer, ForeignKey("ingredient.ingredient_id"), nullable=False
     )
-    unit = Column(Enum(UnitEnum), nullable=False)
-    amount = Column(Float, nullable=False)
+    unit = Column(Enum(UnitEnum))
+    amount = Column(Float)
 
 
 @validates("unit")
