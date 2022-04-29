@@ -11,3 +11,10 @@ class InvalidValuesError(Exception):
 class InvalidUserError(Exception):
     def __init__(self):
         self.message = {"msg": "Invalid email or password!"}
+
+
+class InsufficienDataKeyError(Exception):
+    def __init__(self, valid_keys):
+        self.message = {
+            "msg": f"Insufficient keys! Must be at least this keys {valid_keys}"
+        }

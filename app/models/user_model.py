@@ -8,7 +8,7 @@ from marshmallow import Schema, fields
 
 
 class UserModelSchema(Schema):
-    user_id = fields.Int()
+    user_id = fields.Str()
     name = fields.Str()
     email = fields.Str()
     # account_type = fields.Str()
