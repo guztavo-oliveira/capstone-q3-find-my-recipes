@@ -1,6 +1,9 @@
 from http import HTTPStatus
+from turtle import title
+from unicodedata import category, name
 from flask import jsonify, request
-
+from ipdb import set_trace
+from sqlalchemy import insert
 from app.configs.database import db
 from app.models.recipe_model import RecipeModel, RecipeModelSchema
 from flask import jsonify, request
@@ -14,10 +17,43 @@ from app.models.recipe_ingredient_table import RecipeIngredientModel
 
 
 def get_recipes():
-    base_query = db.session.query(RecipeModel)
-    all_recipes = base_query.order_by(RecipeModel.recipe_id).all()
+    
+        insert_ingredients = [item for item in request.args.get("ingredient").split(",")]
+        # Uma lista com os ingredients que quero procurar numa receita
 
-    return jsonify(all_recipes), HTTPStatus.OK
+        receita_escolhida = []
+
+        for item in insert_ingredients:   
+            
+            ingredients_da_receita = IngredientModel.query.filter_by(title=item).first()
+            print(ingredients_da_receita.id)
+
+            if ingredients_da_receita:
+                receita_escolhida.append(ingredients_da_receita)
+            
+            # for filtered in ingredients_da_receita:
+            #     filtered = base_query.ingredients.filter(name=item).all()
+
+        print(receita_escolhida)
+
+        return jsonify(receita_escolhida)
+    
+"""     except: 
+
+        base_query = db.session.query(RecipeModel)
+        all_recipes = base_query.order_by(RecipeModel.recipe_id).all()
+        # return jsonify(all_recipes), HTTPStatus.OK
+        return "except" """
+
+def recipes_by_category(category):
+    
+    try: 
+        base_query = db.session.query(RecipeModel)
+        recipes = base_query.filter_by(type=category).all()
+        return RecipeModelSchema().load(recipes), HTTPStatus.OK
+    
+    except NoResultFound:
+        return {"msg": "category does not exist"}, HTTPStatus.NOT_FOUND
 
 
 def get_a_recipe_by_id(id):
