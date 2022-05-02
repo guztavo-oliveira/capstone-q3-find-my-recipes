@@ -9,8 +9,8 @@ from app.exc.user_exc import (
     InsufficienDataKeyError,
 )
 from http import HTTPStatus
-from psycopg2.errors import UniqueViolation
-from sqlalchemy.exc import IntegrityError
+from psycopg2.errors import UniqueViolation, InvalidTextRepresentation
+from sqlalchemy.exc import IntegrityError, DataError
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 
@@ -117,6 +117,24 @@ def update_user():
 
     except InsufficienDataKeyError as e:
         return e.message, HTTPStatus.BAD_REQUEST
+
+
+@jwt_required()
+def delete_user(id: str):
+    try:
+        user: UserModel = UserModel.query.filter_by(user_id=id).first()
+
+        if not user:
+            return {"msg": "User not found with especified id"}, HTTPStatus.NOT_FOUND
+
+        db.session.delete(user)
+        db.session.commit()
+
+        return "", HTTPStatus.NO_CONTENT
+
+    except DataError as e:
+        if isinstance(e.orig, InvalidTextRepresentation):
+            return {"msg": "Id not valid!"}, HTTPStatus.BAD_REQUEST
 
 
 def verify_keys(data: dict, valid_keys, update=False):
