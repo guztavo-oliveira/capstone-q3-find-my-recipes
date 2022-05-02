@@ -49,6 +49,9 @@ def login():
         if not user or not user.check_password(data["password"]):
             raise InvalidUserError
 
+        print('=' * 50)
+        print(user)
+
         token = create_access_token(UserModelSchema(only=("name", "email", "user_id")).dump(user))
 
         return {"token": token}
