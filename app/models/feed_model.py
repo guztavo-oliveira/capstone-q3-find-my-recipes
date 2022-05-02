@@ -17,7 +17,7 @@ class FeedModelSchema(Schema):
 
 class FeedModel(db.Model):
 
-    __tablename__ = 'feed'
+    __tablename__ = "feed"
 
     feed_id = Column(BigInteger, primary_key=True)
     icon = Column(String)
