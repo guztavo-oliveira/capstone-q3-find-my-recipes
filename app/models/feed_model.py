@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime as dt
 from uuid import uuid4
 
@@ -15,7 +16,12 @@ class FeedModelSchema(Schema):
     publication = fields.Str()
 
 
+@dataclass
 class FeedModel(db.Model):
+    feed_id: int
+    publication: str
+    icon: str
+    publication_date: str
 
     __tablename__ = 'feed'
 
