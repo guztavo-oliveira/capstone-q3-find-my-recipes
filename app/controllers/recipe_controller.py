@@ -17,17 +17,21 @@ def get_recipes():
     base_query = db.session.query(RecipeModel)
     all_recipes = base_query.order_by(RecipeModel.recipe_id).all()
 
-    return jsonify(all_recipes), HTTPStatus.OK
+    return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes]), HTTPStatus.OK
 
 
-def get_a_recipe_by_id(recipe_id):
+def get_a_recipe_by_id(id):
     try:
-        recipe = RecipeModel.query.get(recipe_id)
+        recipe = db.session.get(id)
 
-        return RecipeModelSchema().dump(recipe), 200
+        return RecipeModelSchema.dump(recipe), HTTPStatus.OK
 
     except NoResultFound:
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
+
+
+def create_recipe():
+    pass
 
 
 @jwt_required()
@@ -42,17 +46,21 @@ def post_a_recipe():
         "serves",
         "img_link",
         "user_id",
-        "ingredients",
+        "ingredients"
     ]
 
     session: Session = db.session
     data = request.get_json()
 
     user: dict = get_jwt_identity()
+    print(user)
 
     try:
 
         verify_keys(data, valid_keys)
+        ingredients = data.pop("ingredients")
+        data["user_id"] = user["user_id"]
+        send_data = RecipeModel(**data)
 
         ingredients = data.pop("ingredients")
 
