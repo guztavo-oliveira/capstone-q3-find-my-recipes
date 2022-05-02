@@ -14,10 +14,13 @@ from app.models.recipe_ingredient_table import RecipeIngredientModel
 
 
 def get_recipes():
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
     base_query = db.session.query(RecipeModel)
-    all_recipes = base_query.order_by(RecipeModel.recipe_id).all()
+    
+    all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(page=page, per_page=per_page)
 
-    return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes]), HTTPStatus.OK
+    return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]), HTTPStatus.OK
 
 
 def get_a_recipe_by_id(id):
@@ -28,10 +31,6 @@ def get_a_recipe_by_id(id):
 
     except NoResultFound:
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
-
-
-def create_recipe():
-    pass
 
 
 @jwt_required()
@@ -59,10 +58,9 @@ def post_a_recipe():
 
         verify_keys(data, valid_keys)
         ingredients = data.pop("ingredients")
+        print(ingredients)
         data["user_id"] = user["user_id"]
         send_data = RecipeModel(**data)
-
-        ingredients = data.pop("ingredients")
 
         data["user_id"] = user["user_id"]
 
@@ -71,11 +69,11 @@ def post_a_recipe():
         for ingredient in ingredients:
 
             ingredient_name = IngredientModel.query.filter(
-                IngredientModel.title.like(f"{ingredient['name']}")
+                IngredientModel.title.like(f"{ingredient['title']}")
             ).first()
 
             if not ingredient_name:
-                ingredient_name = IngredientModel(title=f"{ingredient['name']}")
+                ingredient_name = IngredientModel(title=f"{ingredient['title']}")
                 session.add(ingredient_name)
                 session.commit()
 
