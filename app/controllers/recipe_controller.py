@@ -112,7 +112,15 @@ def update_a_recipe(recipe_id):
 
 @jwt_required()
 def delete_a_recipe(recipe_id):
-    ...
+    try:
+        session: Session = db.session
+        recipe: RecipeModel = RecipeModel.query.filter_by(recipe_id=recipe_id).first()
+        session.delete(recipe)
+        session.commit()
+        return "", HTTPStatus.NO_CONTENT
+
+    except:
+        return {"msg": "recipe not found"}, HTTPStatus.NOT_FOUND
 
 
 def verify_keys(data: dict, valid_keys):
