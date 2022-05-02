@@ -41,8 +41,6 @@ class RecipeModel(db.Model):
 
     user_id = Column(UUID(as_uuid=True), ForeignKey("user.user_id"), default=uuid4)
 
-    user = relationship("UserModel", back_populates="recipe_favorites")
-
     ingredients = relationship(
         "IngredientModel", secondary="recipe_ingredient", back_populates="recipes"
     )
