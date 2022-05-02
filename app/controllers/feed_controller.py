@@ -1,35 +1,34 @@
+from datetime import datetime as dt
 from http import HTTPStatus
+
 from app.configs.database import db
-from app.controllers.user_controller import verify_keys
+from app.controllers import valid_key_request
 from app.models.feed_model import FeedModel, FeedModelSchema
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy.orm.session import Session
-from datetime import datetime as dt
+
 
 @jwt_required()
 def get_publications():
 
-    try: 
-        per_page = request.args.get("per_page")
-        page = request.args.get("page")
-        query = FeedModel.query.limit(per_page).offset(page)
-        feed_list = query.all()
-    
-    except:
-        feed_list = FeedModel.query.all()
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
 
-    return FeedModelSchema().dump(feed_list), HTTPStatus.OK
+    feed_list = FeedModel.query.paginate(page=page, per_page=per_page)
+
+    return jsonify(feed_list.items), HTTPStatus.OK
+
 
 @jwt_required()
 def get_a_publication(post_id:int):
     
-    publication = FeedModel.query.filter_by(feed_id=post_id).one_or_none()
+    publication = FeedModel.query.get(post_id)
     
-    if publication == None:
-        return {"error": "ID inválida"}, HTTPStatus.BAD_REQUEST
+    if not publication:
+        return {"error": "ID not found"}, HTTPStatus.NOT_FOUND
     
-    return jsonify(publication), HTTPStatus.OK
+    return FeedModelSchema().dump(publication), HTTPStatus.OK
 
 
 @jwt_required()
@@ -39,6 +38,15 @@ def post_a_publication():
 
     data = request.get_json()
     user = get_jwt_identity()
+
+    expected_keys = {'publication', 'icon'}
+    required_keys = {'publication'}
+
+    validated =  valid_key_request(data, expected_keys, required_keys )
+
+    if validated:
+
+        return validated, HTTPStatus.BAD_REQUEST
 
     user_name = user['name']
     user_id = user['user_id']
@@ -63,7 +71,14 @@ def update_a_publication(post_id: int):
     data = request.get_json()
     user = get_jwt_identity()
 
-    error = verify_keys()
+    expected_keys = {'publication', 'icon'}
+    required_keys = {'publication'}
+
+    validated =  valid_key_request(data, expected_keys, required_keys)
+
+    if validated:
+
+        return validated, HTTPStatus.BAD_REQUEST
 
     feed: FeedModel = FeedModel.query.get(post_id)
 
@@ -94,7 +109,7 @@ def delete_a_publication(post_id: int):
     if not feed:
         return {'msg': 'Id not found'}, HTTPStatus.NOT_FOUND
 
-    if feed.feed_id == user['user_id']:
+    if str(feed.user_id) == user['user_id']:
 
         db.session.delete(feed)
         db.session.commit()
