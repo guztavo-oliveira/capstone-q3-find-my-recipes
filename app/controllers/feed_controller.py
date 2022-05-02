@@ -12,22 +12,25 @@ from sqlalchemy.orm.session import Session
 @jwt_required()
 def get_publications():
 
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
 
     feed_list = FeedModel.query.paginate(page=page, per_page=per_page)
 
-    return jsonify(feed_list.items), HTTPStatus.OK
+    return (
+        jsonify([FeedModelSchema().dump(items) for items in feed_list.items]),
+        HTTPStatus.OK,
+    )
 
 
 @jwt_required()
-def get_a_publication(post_id:int):
-    
+def get_a_publication(post_id: int):
+
     publication = FeedModel.query.get(post_id)
-    
+
     if not publication:
         return {"error": "ID not found"}, HTTPStatus.NOT_FOUND
-    
+
     return FeedModelSchema().dump(publication), HTTPStatus.OK
 
 
@@ -39,19 +42,19 @@ def post_a_publication():
     data = request.get_json()
     user = get_jwt_identity()
 
-    expected_keys = {'publication', 'icon'}
-    required_keys = {'publication'}
+    expected_keys = {"publication", "icon"}
+    required_keys = {"publication"}
 
-    validated =  valid_key_request(data, expected_keys, required_keys )
+    validated = valid_key_request(data, expected_keys, required_keys)
 
     if validated:
 
         return validated, HTTPStatus.BAD_REQUEST
 
-    user_name = user['name']
-    user_id = user['user_id']
+    user_name = user["name"]
+    user_id = user["user_id"]
 
-    data = {'user_id': user_id, 'user_name': user_name, **data}
+    data = {"user_id": user_id, "user_name": user_name, **data}
 
     new_feed = FeedModel(**data)
 
@@ -71,10 +74,10 @@ def update_a_publication(post_id: int):
     data = request.get_json()
     user = get_jwt_identity()
 
-    expected_keys = {'publication', 'icon'}
-    required_keys = {'publication'}
+    expected_keys = {"publication", "icon"}
+    required_keys = {"publication"}
 
-    validated =  valid_key_request(data, expected_keys, required_keys)
+    validated = valid_key_request(data, expected_keys, required_keys)
 
     if validated:
 
@@ -83,20 +86,18 @@ def update_a_publication(post_id: int):
     feed: FeedModel = FeedModel.query.get(post_id)
 
     if not feed:
-        return {'msg': 'Id not found'}, HTTPStatus.NOT_FOUND
+        return {"msg": "Id not found"}, HTTPStatus.NOT_FOUND
 
-
-    if str(feed.user_id) == user['user_id']:
+    if str(feed.user_id) == user["user_id"]:
 
         for key, value in data.items():
             setattr(feed, key, value)
-    
+
         db.session.commit()
 
         return FeedModelSchema().dump(feed), HTTPStatus.OK
 
-    return {'msg': 'Only the owner can make changes'}, HTTPStatus.UNAUTHORIZED
-
+    return {"msg": "Only the owner can make changes"}, HTTPStatus.UNAUTHORIZED
 
 
 @jwt_required()
@@ -107,15 +108,13 @@ def delete_a_publication(post_id: int):
     feed = FeedModel.query.get(post_id)
 
     if not feed:
-        return {'msg': 'Id not found'}, HTTPStatus.NOT_FOUND
+        return {"msg": "Id not found"}, HTTPStatus.NOT_FOUND
 
-    if str(feed.user_id) == user['user_id']:
+    if str(feed.user_id) == user["user_id"]:
 
         db.session.delete(feed)
         db.session.commit()
 
-        return '', HTTPStatus.NO_CONTENT
+        return "", HTTPStatus.NO_CONTENT
 
-    return {'msg': 'Only the owner can make changes'}, HTTPStatus.UNAUTHORIZED
-
-    
+    return {"msg": "Only the owner can make changes"}, HTTPStatus.UNAUTHORIZED
