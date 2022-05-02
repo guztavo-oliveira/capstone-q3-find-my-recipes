@@ -20,18 +20,14 @@ def get_recipes():
     return jsonify(all_recipes), HTTPStatus.OK
 
 
-def get_a_recipe_by_id(id):
+def get_a_recipe_by_id(recipe_id):
     try:
-        recipe = db.session.get(id)
+        recipe = RecipeModel.query.get(recipe_id)
 
-        return RecipeModelSchema.dump(recipe), HTTPStatus.OK
+        return RecipeModelSchema().dump(recipe), 200
 
     except NoResultFound:
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
-
-
-def create_recipe():
-    pass
 
 
 @jwt_required()
