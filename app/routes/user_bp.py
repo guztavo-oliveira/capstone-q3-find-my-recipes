@@ -5,5 +5,5 @@ bp = Blueprint("user", __name__, url_prefix="/user")
 
 bp.post("")(user_controller.create_user)
 bp.post("/login")(user_controller.login)
-bp.patch("")
+bp.patch("")(user_controller.update_user)
 bp.delete("")
