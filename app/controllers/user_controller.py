@@ -129,7 +129,7 @@ def verify_keys(data: dict, valid_keys, update=False):
 
     if update:
         for key, value in data.items():
-            if key not in ("name", "email", "password"):
+            if key not in tuple(valid_keys):
                 raise InvalidKeysError(valid_keys, key)
             if not isinstance(value, str):
                 raise InvalidValuesError(key, value)
