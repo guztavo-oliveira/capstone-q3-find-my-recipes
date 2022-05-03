@@ -40,7 +40,7 @@ class RecipeModel(db.Model):
     img_link = Column(String, nullable=False)
 
     user_id = Column(UUID(as_uuid=True), ForeignKey("user.user_id"), default=uuid4)
-
+    made_by_user = relationship("UserModel", back_populates="recipe_by_user")
     ingredients = relationship(
         "IngredientModel", secondary="recipe_ingredient", back_populates="recipes"
     )

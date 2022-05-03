@@ -5,6 +5,7 @@ from app.configs.database import db
 from marshmallow import Schema, fields
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 
 class FeedModelSchema(Schema):
@@ -17,7 +18,7 @@ class FeedModelSchema(Schema):
 
 class FeedModel(db.Model):
 
-    __tablename__ = 'feed'
+    __tablename__ = "feed"
 
     feed_id = Column(BigInteger, primary_key=True)
     icon = Column(String)
@@ -25,3 +26,5 @@ class FeedModel(db.Model):
     publication_date = Column(DateTime, default=dt.now())
     user_id = Column(UUID(as_uuid=True), ForeignKey("user.user_id"), default=uuid4)
     publication = Column(Text, nullable=False)
+
+    user = relationship("UserModel", back_populates="feed")
