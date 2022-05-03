@@ -1,6 +1,8 @@
 from http import HTTPStatus
+from unicodedata import category, name
 from flask import jsonify, request
-
+from ipdb import set_trace
+from sqlalchemy import insert
 from app.configs.database import db
 from app.models.recipe_model import RecipeModel, RecipeModelSchema
 from flask import jsonify, request
@@ -14,24 +16,69 @@ from app.models.recipe_ingredient_table import RecipeIngredientModel
 
 
 def get_recipes():
-    base_query = db.session.query(RecipeModel)
-    all_recipes = base_query.order_by(RecipeModel.recipe_id).all()
+    """
+    retorno deve ser como uma rota para a receita selecionada, igual ao usuário
+    """
 
-    return jsonify(all_recipes), HTTPStatus.OK
+    insert_ingredients = [item for item in request.args.get("ingredient").split(",")]
+
+    ingredients_match_recipes = []
+    ingredients_not_match_recipes = []
+    for item in insert_ingredients:
+
+        recipe_ingredients = IngredientModel.query.filter_by(title=item).first()
+
+        if not recipe_ingredients:
+            ingredients_not_match_recipes.append(item)
+            continue
+
+        for recipe in recipe_ingredients.recipes:
+            if recipe not in ingredients_match_recipes:
+                ingredients_match_recipes.append(recipe)
+
+    return {
+        "recipes found with informed ingredients": [
+            RecipeModelSchema(
+                exclude=("user_id", "status", "recipe_id", "method", "img_link")
+            ).dump(recipes)
+            for recipes in ingredients_match_recipes
+        ],
+        "ingredients doesn't found in any recipe": [
+            ingredient for ingredient in ingredients_not_match_recipes
+        ],
+    }
+
+    # page = request.args.get('page', 1, type=int)
+    # per_page = request.args.get('per_page', 10, type=int)
+    # base_query = db.session.query(RecipeModel)
+    #
+    # all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(page=page, per_page=per_page)
+    #
+    # return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]), HTTPStatus.OK
 
 
-def get_a_recipe_by_id(id):
+def recipes_by_category(category):
+
     try:
-        recipe = db.session.get(id)
+        base_query = db.session.query(RecipeModel)
+        chosen_recipes = base_query.filter_by(type=category).all()
+        return (
+            jsonify([RecipeModelSchema().dump(recipe) for recipe in chosen_recipes]),
+            HTTPStatus.OK,
+        )
 
-        return RecipeModelSchema.dump(recipe), HTTPStatus.OK
+    except NoResultFound:
+        return {"msg": "category does not exist"}, HTTPStatus.NOT_FOUND
+
+
+def get_a_recipe_by_id(recipe_id: str):
+    try:
+        recipe = db.session.get(RecipeModel, recipe_id)
+
+        return RecipeModelSchema().dump(recipe), HTTPStatus.OK
 
     except NoResultFound:
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
-
-
-def create_recipe():
-    pass
 
 
 @jwt_required()
@@ -53,12 +100,15 @@ def post_a_recipe():
     data = request.get_json()
 
     user: dict = get_jwt_identity()
+    print(user)
 
     try:
 
         verify_keys(data, valid_keys)
-
         ingredients = data.pop("ingredients")
+        print(ingredients)
+        data["user_id"] = user["user_id"]
+        send_data = RecipeModel(**data)
 
         data["user_id"] = user["user_id"]
 
@@ -67,11 +117,11 @@ def post_a_recipe():
         for ingredient in ingredients:
 
             ingredient_name = IngredientModel.query.filter(
-                IngredientModel.title.like(f"{ingredient['name']}")
+                IngredientModel.title.like(f"{ingredient['title']}")
             ).first()
 
             if not ingredient_name:
-                ingredient_name = IngredientModel(title=f"{ingredient['name']}")
+                ingredient_name = IngredientModel(title=f"{ingredient['title']}")
                 session.add(ingredient_name)
                 session.commit()
 
@@ -112,7 +162,15 @@ def update_a_recipe(recipe_id):
 
 @jwt_required()
 def delete_a_recipe(recipe_id):
-    ...
+    try:
+        session: Session = db.session
+        recipe: RecipeModel = RecipeModel.query.filter_by(recipe_id=recipe_id).first()
+        session.delete(recipe)
+        session.commit()
+        return "", HTTPStatus.NO_CONTENT
+
+    except:
+        return {"msg": "recipe not found"}, HTTPStatus.NOT_FOUND
 
 
 def verify_keys(data: dict, valid_keys):
