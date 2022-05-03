@@ -18,3 +18,8 @@ class InsufficienDataKeyError(Exception):
         self.message = {
             "msg": f"Insufficient keys! Must be at least this keys {valid_keys}"
         }
+
+
+class InvalidEmailError(Exception):
+    def __init__(self):
+        self.message = {"msg": "Invalid email!"}
