@@ -17,13 +17,29 @@ from app.models.recipe_ingredient_table import RecipeIngredientModel
 
 def get_recipes():
 
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
-    base_query = db.session.query(RecipeModel)
+    insert_ingredients = [item for item in request.args.get("ingredient").split(",")]
+    # print(insert_ingredients)
+    # Uma lista com os ingredients que quero procurar numa receita
     
-    all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(page=page, per_page=per_page)
+    base_query = db.session.query(RecipeModel.ingredients)
 
-    return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]), HTTPStatus.OK
+    ingredients_match = []
+    for item in insert_ingredients:   
+        
+        recipe_ingredients = base_query.filter_by(title=item).one()
+        print(recipe_ingredients.__dict__)
+        if recipe_ingredients:
+            ingredients_match.append(recipe_ingredients)
+    
+    return ""
+
+    # page = request.args.get('page', 1, type=int)
+    # per_page = request.args.get('per_page', 10, type=int)
+    # base_query = db.session.query(RecipeModel)
+    # 
+    # all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(page=page, per_page=per_page)
+    # 
+    # return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]), HTTPStatus.OK
 
 def recipes_by_category(category):
     
