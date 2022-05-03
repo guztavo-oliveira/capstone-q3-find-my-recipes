@@ -15,6 +15,8 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 
 
 from app.models.user_model import UserModel, UserModelSchema
+from app.models.recipe_model import RecipeModelSchema
+from app.models.feed_model import FeedModel, FeedModelSchema
 
 
 def create_user():
@@ -94,8 +96,6 @@ def update_user():
         user: UserModel = get_jwt_identity()
         user = UserModel.query.filter_by(email=user["email"]).first()
 
-        # set_trace()
-
         verify_keys(data, valid_keys, update=True)
 
         for key, value in data.items():
@@ -135,6 +135,42 @@ def delete_user(id: str):
     except DataError as e:
         if isinstance(e.orig, InvalidTextRepresentation):
             return {"msg": "Id not valid!"}, HTTPStatus.BAD_REQUEST
+
+
+@jwt_required()
+def get_all_user_data():
+    user: UserModel = get_jwt_identity()
+    user = UserModel.query.filter_by(user_id=user["user_id"]).first()
+
+    return UserModelSchema().dump(user), HTTPStatus.OK
+
+
+@jwt_required()
+def get_user_favorite_recipe(id: str):
+    user = UserModel.query.filter_by(user_id=id).first()
+
+    return jsonify(
+        [
+            RecipeModelSchema(only=("title",)).dump(item)
+            for item in user.recipe_favorites
+        ]
+    )
+
+
+@jwt_required()
+def get_recipe_by_user(id: str):
+    user = UserModel.query.filter_by(user_id=id).first()
+    set_trace()
+    return jsonify(
+        [RecipeModelSchema(only=("title",)).dump(item) for item in user.recipe_by_user]
+    )
+
+
+@jwt_required()
+def get_user_feed(id: str):
+    user = UserModel.query.filter_by(user_id=id).first()
+
+    return jsonify([FeedModelSchema().dump(item) for item in user.feed])
 
 
 def verify_keys(data: dict, valid_keys, update=False):

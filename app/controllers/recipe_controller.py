@@ -1,6 +1,8 @@
 from http import HTTPStatus
+from unicodedata import category, name
 from flask import jsonify, request
-
+from ipdb import set_trace
+from sqlalchemy import insert
 from app.configs.database import db
 from app.models.recipe_model import RecipeModel, RecipeModelSchema
 from flask import jsonify, request
@@ -14,6 +16,7 @@ from app.models.recipe_ingredient_table import RecipeIngredientModel
 
 
 def get_recipes():
+
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     base_query = db.session.query(RecipeModel)
@@ -22,6 +25,15 @@ def get_recipes():
 
     return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]), HTTPStatus.OK
 
+def recipes_by_category(category):
+    
+    try: 
+        base_query = db.session.query(RecipeModel)
+        chosen_recipes = base_query.filter_by(type=category).all()
+        return jsonify([RecipeModelSchema().dump(recipe) for recipe in chosen_recipes]), HTTPStatus.OK
+    
+    except NoResultFound:
+        return {"msg": "category does not exist"}, HTTPStatus.NOT_FOUND
 
 def get_a_recipe_by_id(id):
     try:
