@@ -3,13 +3,13 @@ from marshmallow import Schema, fields
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
-from .recipe_model import RecipeModel
+# from .recipe_model import RecipeModel
 
 
 class IngredientSchema(Schema):
     ingredient_id = fields.Int()
     title = fields.Str()
-    recipes = fields.List(fields.Nested(RecipeModel))
+    # recipes = fields.List(fields.Nested(RecipeModel))
 
 
 class IngredientModel(db.Model):
