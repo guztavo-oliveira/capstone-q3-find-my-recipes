@@ -170,9 +170,7 @@ def post_a_recipe():
         return e.message, HTTPStatus.BAD_REQUEST
 
     return (
-        RecipeModelSchema(
-            only=("title", "time", "type", "method", "status", "serves", "img_link")
-        ).dump(recipe),
+        RecipeModelSchema().dump(recipe),
         HTTPStatus.CREATED,
     )
 
@@ -234,9 +232,7 @@ def update_a_recipe(recipe_id):
                 db.session.commit()
 
         return (
-            RecipeModelSchema(
-                only=("title", "time", "type", "method", "status", "serves", "img_link")
-            ).dumps(recipe_to_update),
+            RecipeModelSchema().dumps(recipe_to_update),
             HTTPStatus.OK,
         )
 
