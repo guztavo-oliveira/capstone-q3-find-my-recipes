@@ -282,12 +282,11 @@ def update_a_recipe(recipe_id):
         for key, value in data.items():
             setattr(recipe_to_update, key, value)
 
+        db.session.add(recipe_to_update)
+        db.session.commit()
+
         return (
-<<<<<<< HEAD
             RecipeModelSchema(exclude=("user_id", "status")).dump(recipe_to_update),
-=======
-            RecipeModelSchema().dumps(recipe_to_update),
->>>>>>> 3e6e916d91f8e2f104d6137b25d21d8d0b369a90
             HTTPStatus.OK,
         )
 
