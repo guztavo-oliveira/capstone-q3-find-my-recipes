@@ -13,6 +13,8 @@ from app.exc.user_exc import (
     InvalidUserError,
     PermissionDeniedError,
 )
+from sqlalchemy.orm.exc import UnmappedInstanceError
+from sqlalchemy.exc import DataError
 from http import HTTPStatus
 from app.models.ingredient_model import IngredientModel
 from app.models.recipe_ingredient_table import RecipeIngredientModel
@@ -250,8 +252,11 @@ def delete_a_recipe(recipe_id):
         session.commit()
         return "", HTTPStatus.NO_CONTENT
 
-    except:
-        return {"msg": "recipe not found"}, HTTPStatus.NOT_FOUND
+    except UnmappedInstanceError:
+        return {"msg": "Recipe does not exist"}, HTTPStatus.NOT_FOUND
+
+    except DataError:
+        return {"msg": "Recipe id must be an integer"}, HTTPStatus.NOT_FOUND
 
 
 def verify_keys(data: dict, valid_keys):
