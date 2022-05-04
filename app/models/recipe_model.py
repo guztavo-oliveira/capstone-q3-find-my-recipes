@@ -11,8 +11,8 @@ from flask_marshmallow.fields import Hyperlinks, URLFor
 
 
 class MyEnum(enum.Enum):
-    NOT_VERIFIED = 0
-    VERIFIED = 1
+    not_verified = 0
+    verified = 1
 
 
 class RecipeModelSchema(Schema):
