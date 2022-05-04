@@ -1,7 +1,9 @@
+import unidecode
 from http import HTTPStatus
 from flask import jsonify, request
 from ipdb import set_trace
 from app.configs.database import db
+from app.exc.recipe_ingredient_exc import InvalidUnit
 from app.models.recipe_model import RecipeModel, RecipeModelSchema
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -153,7 +155,10 @@ def post_a_recipe():
             ).first()
 
             recipe_ingredient.amount = ingredient["amount"]
-            recipe_ingredient.unit = ingredient["unit"]
+            recipe_ingredient.unit = unidecode.unidecode(ingredient["unit"].upper())
+
+            if unlisted_unit(recipe_ingredient.unit):
+                return {"msg": f"Unidade deve ser uma dessas: {required_units}"}
 
             session.add(recipe_ingredient)
             session.commit()
@@ -273,3 +278,13 @@ def verify_keys(data: dict, valid_keys):
 def validate_user(jwt_user_id, recipe_user_id):
     if jwt_user_id != str(recipe_user_id):
         raise PermissionDeniedError
+
+
+required_units = ["QUILO", "GRAMA", "LITRO", "MILILITRO", "XICARA", "COLHER", "UNIDADE"]
+
+def unlisted_unit(inserted_unit):
+    
+    for unit in required_units:
+        if inserted_unit == unit:
+            return False
+    return True
