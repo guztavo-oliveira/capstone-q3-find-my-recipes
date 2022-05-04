@@ -1,8 +1,10 @@
+import unidecode
 from http import HTTPStatus
 import uuid
 from flask import jsonify, request
 from ipdb import set_trace
 from app.configs.database import db
+from app.exc.recipe_ingredient_exc import InvalidUnit
 from app.models.recipe_model import RecipeModel, RecipeModelSchema
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -185,7 +187,10 @@ def post_a_recipe():
             ).first()
 
             recipe_ingredient.amount = ingredient["amount"]
-            recipe_ingredient.unit = ingredient["unit"]
+            recipe_ingredient.unit = unidecode.unidecode(ingredient["unit"].upper())
+
+            if unlisted_unit(recipe_ingredient.unit):
+                return {"msg": f"Unidade deve ser uma dessas: {required_units}"}
 
             session.add(recipe_ingredient)
             session.commit()
@@ -197,9 +202,7 @@ def post_a_recipe():
         return e.message, HTTPStatus.BAD_REQUEST
 
     return (
-        RecipeModelSchema(
-            only=("title", "time", "type", "method", "status", "serves", "img_link")
-        ).dump(recipe),
+        RecipeModelSchema().dump(recipe),
         HTTPStatus.CREATED,
     )
 
@@ -280,7 +283,11 @@ def update_a_recipe(recipe_id):
             setattr(recipe_to_update, key, value)
 
         return (
+<<<<<<< HEAD
             RecipeModelSchema(exclude=("user_id", "status")).dump(recipe_to_update),
+=======
+            RecipeModelSchema().dumps(recipe_to_update),
+>>>>>>> 3e6e916d91f8e2f104d6137b25d21d8d0b369a90
             HTTPStatus.OK,
         )
 
@@ -323,3 +330,13 @@ def verify_keys(data: dict, valid_keys):
 def validate_user(jwt_user_id: str, recipe_user_id: uuid):
     if jwt_user_id != str(recipe_user_id):
         raise PermissionDeniedError
+
+
+required_units = ["QUILO", "GRAMA", "LITRO", "MILILITRO", "XICARA", "COLHER", "UNIDADE"]
+
+def unlisted_unit(inserted_unit):
+    
+    for unit in required_units:
+        if inserted_unit == unit:
+            return False
+    return True

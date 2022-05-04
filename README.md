@@ -1,18 +1,32 @@
 # API - CAPSTONE - FIND MY RECIPES
 
-O Find my Recipes é uma aplicação, para cadastrar receitas juntamente com seus ingredientes, podendo tambem favorita-los e escrever comentários.
+<br />
+
+Este repositório destina-se ao projeto de conclusão, também chamado de Capstone, do Quarter 3 - Backend.
+
+Será implementado em python com framework Flask e utilização do banco relacional PostgreSQL.
+
+A proposta do projeto baseia-se na construção da API de acesso de outro projeto realizado no Capstone de conclusão de Frontend.
+
+Em resumo o projeto de Frontend, acessível [aqui](https://capstone-dusky.vercel.app/), chama-se Find Recipes. É um site culinário, em que os visitantes tem possibilidade de cadastrar suas receitas, com moderação do Admin, e encontrar outras que sejam compatíveis com sua disponibilidade de ingredientes.
+
+---
 
 <br />
 
-#### URL DA API
+### URL DA API
 
-https://capstone-find-recipes.herokuapp.com
+A url base da API é [https://capstone-find-recipes.herokuapp.com](https://capstone-find-recipes.herokuapp.com/)
+
+---
 
 <br />
 
 # Enpoints
 
 A API tem N endpoints diferentes, para criação, atualização, deleção e obtenção de usuários, receitas, ingredientes, favorito e comentários.
+
+---
 
 <br />
 
@@ -33,7 +47,6 @@ A API tem N endpoints diferentes, para criação, atualização, deleção e obt
 ---
 
 <br />
-
 
 ## Post/Register
 
@@ -62,6 +75,8 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 
 ---
 
+<br />
+
 ## Post/Login
 
 <br />
@@ -87,37 +102,18 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 
 ---
 
+<br />
+
 ## Get
 
 <br />
 
 **Rota necessita de autenticação**
 
-`GET/user/<user_id>`
-
-```json
-No body
-```
-
-Requisição **bem sucedida**, retorna a seguinte resposta.
-
-`STATUS 200 - OK`
-
-```json
-{}
-```
-
----
-
-## Get All
-
-<br />
-
-
 `GET/user`
 
 ```json
-{}
+NO BODY
 ```
 
 Requisição **bem sucedida**, retorna a seguinte resposta.
@@ -125,14 +121,23 @@ Requisição **bem sucedida**, retorna a seguinte resposta.
 `STATUS 200 - OK`
 
 ```json
-{}
+{
+	"user_id": "11a881f9-ddcc-4d5b-8ad8-704bdfc6217a",
+	"name": "kenzinho jonson",
+	"email": "kenzinho@mail.com",
+	"links": {
+		"recipes": "/user/11a881f9-ddcc-4d5b-8ad8-704bdfc6217a/recipe_by_user",
+		"favorites_recipes": "/user/11a881f9-ddcc-4d5b-8ad8-704bdfc6217a/favorite_recipe",
+		"feed": "/user/11a881f9-ddcc-4d5b-8ad8-704bdfc6217a/feed"
+	}
+}
 ```
 
 ---
 
 <br />
 
-<!-- ## Update
+## Update
 
 <br />
 
@@ -142,15 +147,30 @@ Requisição **bem sucedida**, retorna a seguinte resposta.
 
 ```json
 {
-	"email": "kenzinho@mail.com"
+	"name": "kenzinho jonson da silva"
 }
 ```
 
 Requisição **bem sucedida** , sem retorno.
 
-`STATUS 204 - NO CONTENT`
+`STATUS 204 - OK`
+
+```json
+{
+	"user_id": "11a881f9-ddcc-4d5b-8ad8-704bdfc6217a",
+	"name": "kenzinho jonson da silva",
+	"email": "kenzinho@mail.com",
+	"links": {
+		"recipes": "/user/11a881f9-ddcc-4d5b-8ad8-704bdfc6217a/recipe_by_user",
+		"favorites_recipes": "/user/11a881f9-ddcc-4d5b-8ad8-704bdfc6217a/favorite_recipe",
+		"feed": "/user/11a881f9-ddcc-4d5b-8ad8-704bdfc6217a/feed"
+	}
+}
+```
 
 ---
+
+<br />
 
 ## Delete
 
@@ -158,13 +178,15 @@ Requisição **bem sucedida** , sem retorno.
 
 **Rota necessita de autenticação**
 
-`DELETE/user`
+`DELETE/user/<user_id>`
 
-{}
+```json
+NO BODY
+```
 
 Requisição **bem sucedida** , sem retorno.
 
-`STATUS 204 - NO CONTENT` -->
+`STATUS 204 - NO CONTENT`
 
 
 
@@ -204,13 +226,24 @@ Requisição **bem sucedida** , sem retorno.
 
 ```json
 {
-	"title": "arroz",
-	"time": "20 minutos",
-	"type": "fácil",
-	"method": "coloca na panela e deixa lá",
-	"serves": 3,
-	"img_link": "google.com",
-	"user_id": "897a3c7e-6ef9-428d-b729-076016fe1a30"
+		"title": "Arroz Doce",
+		"time": "40 minutos",
+		"type": "Sobremesa",
+		"method": "Coloca arroz e leite dentro da panela e ferve",
+		"serves": 5,
+		"img_link": "https://claudia.abril.com.br/wp-content/uploads/2020/02/receita-arroz-doce-light.jpg?quality=85&strip=info",
+		"ingredients":[
+			{
+				"title": "arroz",
+				"unit": "GRAMA",
+				"amount": 100
+			},
+			{
+				"title": "leite",
+				"unit": "LITRO",
+				"amount": 2
+			}
+		]
 }
 ```
 
@@ -219,17 +252,51 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 `STATUS 201 - CREATED`
 
 ```json
-{}
+{
+	"recipe_id": 7,
+	"title": "Arroz doce do jonson",
+	"time": "40 minutos",
+	"type": "Sobremesa",
+	"method": "Coloca arroz e leite dentro da panela e ferve",
+	"status": "MyEnum.NOT_VERIFIED",
+	"serves": 5,
+	"img_link": "https://claudia.abril.com.br/wp-content/uploads/2020/02/receita-arroz-doce-light.jpg?quality=85&strip=info",
+	"user_id": 23471818027871931346858999649384407418,
+	"ingredients": [
+		{
+			"ingredient_id": 1,
+			"title": "arroz",
+			"unit": [
+				"g"
+			],
+			"amount": [,
+				100.0
+			]
+		},
+		{
+			"ingredient_id": 6,
+			"title": "leite",
+			"unit": [
+				"l"
+			],
+			"amount": [
+				2.0,
+			]
+		}
+	],
+	"links": {
+		"Show more": "/recipe/7"
+	}
+}
 ```
 
 ---
 
-
-## Get All
-
 <br />
 
-**Rota necessita de autenticação**
+## Get
+
+<br />
 
 `GET/recipe`
 
@@ -242,16 +309,55 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 `STATUS 200 - OK`
 
 ```json
-{}
+[
+	{
+		"recipe_id": 6,
+		"title": "Arroz Doce",
+		"time": "40 minutos",
+		"type": "Sobremesa",
+		"method": "Coloca arroz e leite dentro da panela e ferve",
+		"status": "MyEnum.NOT_VERIFIED",
+		"serves": 5,
+		"img_link": "https://claudia.abril.com.br/wp-content/uploads/2020/02/receita-arroz-doce-light.jpg?quality=85&strip=info",
+		"user_id": 23471818027871931346858999649384407418,
+		"ingredients": [
+			{
+				"ingredient_id": 1,
+				"title": "arroz",
+				"unit": [
+					"kg",
+					"g"
+				],
+				"amount": [
+					2.0,
+					100.0
+				]
+			},
+			{
+				"ingredient_id": 6,
+				"title": "leite",
+				"unit": [
+					"l"
+				],
+				"amount": [
+					2.0
+				]
+			}
+		],
+		"links": {
+			"Show more": "/recipe/6"
+		}
+	}
+]
 ```
 
 ---
 
+<br />
+
 ## Get by Id
 
 <br />
-
-**Rota necessita de autenticação**
 
 `GET/recipe/<recipe_id>`
 
@@ -264,21 +370,54 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 `STATUS 200 - OK`
 
 ```json
-{}
+{
+	"recipe_id": 6,
+	"title": "Arroz Doce",
+	"time": "40 minutos",
+	"type": "Sobremesa",
+	"method": "Coloca arroz e leite dentro da panela e ferve",
+	"status": "MyEnum.NOT_VERIFIED",
+	"serves": 5,
+	"img_link": "https://claudia.abril.com.br/wp-content/uploads/2020/02/receita-arroz-doce-light.jpg?quality=85&strip=info",
+	"ingredients": [
+		{
+			"ingredient_id": 1,
+			"title": "arroz",
+			"unit": [
+				"kg",
+				"g"
+			],
+			"amount": [
+				2.0,
+				100.0
+			]
+		},
+		{
+			"ingredient_id": 6,
+			"title": "leite",
+			"unit": [
+				"l"
+			],
+			"amount": [
+				2.0
+			]
+		}
+	]
+}
 ```
 
 ---
 
-## Patch
+<br />
+
+## Get by Ingredient
 
 <br />
 
-**Rota necessita de autenticação**
-
-`PATCH/recipe`
+`GET/recipe/ingredient?ingredient=leite`
 
 ```json
-{}
+No body
 ```
 
 Requisição **bem sucedida** retorna a seguinte resposta:
@@ -286,11 +425,198 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 `STATUS 200 - OK`
 
 ```json
-{}
+{
+	"recipes found with informed ingredients": [
+		{
+			"title": "Arroz Doce",
+			"time": "40 minutos",
+			"type": "Sobremesa",
+			"serves": 5,
+			"ingredients": [
+				{
+					"ingredient_id": 1,
+					"title": "arroz",
+					"unit": [
+						"kg",
+						"g"
+					],
+					"amount": [
+						2.0,
+						100.0
+					]
+				},
+				{
+					"ingredient_id": 6,
+					"title": "leite",
+					"unit": [
+						"l"
+					],
+					"amount": [
+						2.0
+					]
+				}
+			],
+			"links": {
+				"Show more": "/recipe/6"
+			}
+		}
+	]
+}
 ```
 
 ---
 
+<br />
+
+## Get by Category
+
+<br />
+
+**Rota necessita de autenticação**
+
+`GET/recipe/type/<type>`
+
+```json
+No body
+```
+
+Requisição **bem sucedida** retorna a seguinte resposta:
+
+`STATUS 200 - OK`
+
+```json
+[
+	{
+		"recipe_id": 6,
+		"title": "Arroz Doce",
+		"time": "40 minutos",
+		"type": "Sobremesa",
+		"method": "Coloca arroz e leite dentro da panela e ferve",
+		"status": "MyEnum.NOT_VERIFIED",
+		"serves": 5,
+		"img_link": "https://claudia.abril.com.br/wp-content/uploads/2020/02/receita-arroz-doce-light.jpg?quality=85&strip=info",
+		"user_id": 23471818027871931346858999649384407418,
+		"ingredients": [
+			{
+				"ingredient_id": 1,
+				"title": "arroz",
+				"unit": [
+					"kg",
+					"g"
+				],
+				"amount": [
+					2.0,
+					100.0
+				]
+			},
+			{
+				"ingredient_id": 6,
+				"title": "leite",
+				"unit": [
+					"l"
+				],
+				"amount": [
+					2.0
+				]
+			}
+		],
+		"links": {
+			"Show more": "/recipe/6"
+		}
+	}
+]
+```
+
+---
+<br />
+
+## Patch
+
+<br />
+
+**Rota necessita de autenticação**
+
+`PATCH/recipe/<recipe_id>`
+
+```json
+{
+		"ingredients":[
+			{
+				"title": "arroz",
+				"unit": "GRAMA",
+				"amount": 100
+			},
+			{
+				"title": "leite",
+				"unit": "LITRO",
+				"amount": 2
+			},
+			{
+				"title": "canela",
+				"unit": "UNIDADE",
+				"amount": 10
+			}
+		]
+}
+```
+
+Requisição **bem sucedida** retorna a seguinte resposta:
+
+`STATUS 200 - OK`
+
+```json
+{
+	"recipe_id": 6,
+	"title": "Arroz Doce",
+	"time": "40 minutos",
+	"type": "Sobremesa",
+	"method": "Coloca arroz e leite dentro da panela e ferve",
+	"status": "MyEnum.NOT_VERIFIED",
+	"serves": 5,
+	"img_link": "https://claudia.abril.com.br/wp-content/uploads/2020/02/receita-arroz-doce-light.jpg?quality=85&strip=info",
+	"user_id": 23471818027871931346858999649384407418,
+	"ingredients": [
+		{
+			"ingredient_id": 1,
+			"title": "arroz",
+			"unit": [
+				"g"
+			],
+			"amount": [
+				100.0
+			]
+		},
+		{
+			"ingredient_id": 6,
+			"title": "leite",
+			"unit": [
+				"l"
+			],
+			"amount": [
+				2.0
+			]
+		},
+		{
+			"ingredient_id": 8,
+			"title": "canela",
+			"unit": [
+				"unidade"
+			],
+			"amount": [
+				10.0
+			]
+		}
+	],
+	"links": {
+		"Show more": "/recipe/6"
+	}
+}
+
+```
+
+---
+
+<br />
 
 ## Delete
 
@@ -301,7 +627,7 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 `DELETE/recipe/<recipe_id>`
 
 ```json
-{}
+NO BODY
 ```
 
 Requisição **bem sucedida** retorna a seguinte resposta:
@@ -339,7 +665,6 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 
 <br />
 
-
 ## Post
 
 <br />
@@ -349,18 +674,24 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 `POST/favorites`
 
 ```json
-{}
+{
+	"recipes_id": 6
+}
 ```
 
 Requisição **bem sucedida** retorna a seguinte resposta:
 
-`STATUS 201 - CREATED`
+`STATUS 200 - OK`
 
 ```json
-{}
+{
+	"message": "successfully added"
+}
 ```
 
 ---
+
+<br />
 
 ## Get
 
@@ -368,10 +699,10 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 
 **Rota necessita de autenticação**
 
-`GET/favorites`
+`GET/user/<user_id>/favorite_recipe`
 
 ```json
-{}
+NO BODY
 ```
 
 Requisição **bem sucedida** retorna a seguinte resposta:
@@ -379,32 +710,16 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 `STATUS 200 - OK`
 
 ```json
-[{}]
+[
+	{
+		"title": "Arroz Doce"
+	}
+]
 ```
 
 ---
-
-## Patch
 
 <br />
-
-**Rota necessita de autenticação**
-
-`PATCH/favorites/<user_id>`
-
-```json
-{}
-```
-
-Requisição **bem sucedida** retorna a seguinte resposta:
-
-`STATUS 200 - OK`
-
-```json
-{}
-```
-
----
 
 ## Delete
 
@@ -412,10 +727,10 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 
 **Rota necessita de autenticação**
 
-`DELETE/favorites/<user_id>`
+`DELETE/favorites/<recipe-id>`
 
 ```json
-{}
+NO BODY
 ```
 
 Requisição **bem sucedida** retorna a seguinte resposta:
@@ -460,10 +775,15 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 
 **Rota necessita de autenticação**
 
-`POST/feed/<recipe-id>`
+`POST/feed`
+
+### Icon não é um campo obrigatório.
 
 ```json
-{}
+{
+	"publication": "A receita de arroz doce com cerveja fica top",
+	"icon": "miranha"
+}
 ```
 
 Requisição **bem sucedida** retorna a seguinte resposta:
@@ -471,10 +791,18 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 `STATUS 201 - CREATED`
 
 ```json
-{}
+{
+	"user_name": "kenzinho jonson da silva",
+	"feed_id": 3,
+	"publication_date": "2022-05-04 15:37:31.095870",
+	"publication": "A receita de arroz doce com cerveja fica top",
+	"icon": "miranha"
+}
 ```
 
 ---
+
+<br />
 
 ## Get by Id
 
@@ -482,10 +810,10 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 
 **Rota necessita de autenticação**
 
-`GET/feed/<recipe-id>`
+`GET/feed/<post-id>`
 
 ```json
-{}
+NO BODY
 ```
 
 Requisição **bem sucedida** retorna a seguinte resposta:
@@ -493,10 +821,64 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 `STATUS 200 - OK`
 
 ```json
-{}
+{
+	"user_name": "kenzinho jonson da silva",
+	"feed_id": 3,
+	"publication_date": "2022-05-04 15:37:31.095870",
+	"publication": "A receita de arroz doce com cerveja fica top",
+	"icon": "miranha"
+}
 ```
 
 ---
+
+<br />
+
+## Get
+
+<br />
+
+**Rota necessita de autenticação**
+
+`GET/feed/<post-id>`
+
+```json
+NO BODY
+```
+
+Requisição **bem sucedida** retorna a seguinte resposta:
+
+`STATUS 200 - OK`
+
+```json
+[
+	{
+		"user_name": "kenzinho",
+		"feed_id": 1,
+		"publication_date": "2022-05-04 11:52:05.230885",
+		"publication": "4",
+		"icon": null
+	},
+	{
+		"user_name": "kenzinho jonson da silva",
+		"feed_id": 2,
+		"publication_date": "2022-05-04 15:36:31.185899",
+		"publication": "A receita de arroz doce com cerveja fica top",
+		"icon": null
+	},
+	{
+		"user_name": "kenzinho jonson da silva",
+		"feed_id": 3,
+		"publication_date": "2022-05-04 15:37:31.095870",
+		"publication": "A receita de arroz doce com cerveja fica top",
+		"icon": "miranha"
+	}
+]
+```
+
+---
+
+<br />
 
 ## Patch
 
@@ -504,10 +886,13 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 
 **Rota necessita de autenticação**
 
-`PATCH/feed/...`
+`PATCH/feed/<post_id>`
 
 ```json
-{}
+{
+	"publication": "A receita de arroz doce com alcool fica top",
+	"icon": "capetao america"
+}
 ```
 
 Requisição **bem sucedida** retorna a seguinte resposta:
@@ -515,10 +900,18 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 `STATUS 200 - OK`
 
 ```json
-{}
+{
+	"user_name": "kenzinho",
+	"feed_id": 1,
+	"publication_date": "2022-05-04 11:52:05.230885",
+	"publication": "A receita de arroz doce com alcool fica top",
+	"icon": "capetao america"
+}
 ```
 
 ---
+
+<br />
 
 ## Delete
 
@@ -526,10 +919,10 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 
 **Rota necessita de autenticação**
 
-`DELETE/feed/...`
+`DELETE/feed/<post_id>`
 
 ```json
-{}
+NO BODY
 ```
 
 Requisição **bem sucedida** retorna a seguinte resposta:
