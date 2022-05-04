@@ -1,15 +1,13 @@
 from http import HTTPStatus
-from unicodedata import category, name
 from flask import jsonify, request
 from ipdb import set_trace
-from sqlalchemy import insert
 from app.configs.database import db
 from app.models.recipe_model import RecipeModel, RecipeModelSchema
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
-from app.exc.user_exc import InvalidKeysError, InvalidValuesError, InvalidUserError
+from app.exc.user_exc import InvalidKeysError, InvalidValuesError, InvalidUserError, PermissionDeniedError
 from http import HTTPStatus
 from app.models.ingredient_model import IngredientModel
 from app.models.recipe_ingredient_table import RecipeIngredientModel
@@ -57,6 +55,7 @@ def get_recipes():
     # return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]), HTTPStatus.OK
 
 
+
 def recipes_by_category(category):
 
     try:
@@ -75,12 +74,11 @@ def get_a_recipe_by_id(recipe_id: str):
     try:
         recipe = db.session.get(RecipeModel, recipe_id)
 
-        return RecipeModelSchema().dump(recipe), HTTPStatus.OK
-
+        return RecipeModelSchema().dump(recipe), HTTPStatus.O
     except NoResultFound:
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
-
-
+    
+    
 @jwt_required()
 def post_a_recipe():
 
@@ -100,15 +98,11 @@ def post_a_recipe():
     data = request.get_json()
 
     user: dict = get_jwt_identity()
-    print(user)
 
     try:
 
         verify_keys(data, valid_keys)
         ingredients = data.pop("ingredients")
-        print(ingredients)
-        data["user_id"] = user["user_id"]
-        send_data = RecipeModel(**data)
 
         data["user_id"] = user["user_id"]
 
@@ -157,7 +151,71 @@ def post_a_recipe():
 
 @jwt_required()
 def update_a_recipe(recipe_id):
-    ...
+    try:
+        data = request.get_json()
+
+        user = get_jwt_identity()
+
+        valid_keys = [
+        "title",
+        "time",
+        "type",
+        "method",
+        "serves",
+        "img_link",
+        "ingredients"
+        ]
+
+        verify_keys(data, valid_keys)
+
+        recipe_to_update = RecipeModel.query.filter_by(recipe_id = recipe_id).one()
+
+        validate_user(user["user_id"], recipe_to_update.user_id)
+
+        if "ingredients" in data.keys():
+            ingredients = data.pop("ingredients")
+
+            for key, value in data.items():
+                setattr(recipe_to_update, key, value)
+
+            for ingredient in ingredients:
+                ingredient_name = IngredientModel.query.filter(
+                    IngredientModel.title.like(f"{ingredient['title']}")
+                ).first()
+
+                if not ingredient_name:
+                    ingredient_name = IngredientModel(title=f"{ingredient['title']}")
+                    db.session.add(ingredient_name)
+                    db.session.commit()
+
+                recipe_to_update.ingredients.append(ingredient_name)
+
+                db.session.add(recipe_to_update)
+                db.session.commit()
+
+                recipe_ingredient = RecipeIngredientModel.query.filter(
+                RecipeIngredientModel.ingredient_id == ingredient_name.ingredient_id,
+                RecipeIngredientModel.recipe_id == recipe_to_update.recipe_id,
+                ).first()
+
+                recipe_ingredient.amount = ingredient["amount"]
+                recipe_ingredient.unit = ingredient["unit"]
+
+                db.session.add(recipe_ingredient)
+                db.session.commit()
+
+        return RecipeModelSchema(only=(
+            "title", "time", "type", "method", "status", "serves", "img_link"
+            )).dumps(recipe_to_update), HTTPStatus.OK
+
+    except InvalidKeysError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
+
+    except NoResultFound:
+        return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
+    
+    except PermissionDeniedError as e:
+        return e.message, HTTPStatus.UNAUTHORIZED
 
 
 @jwt_required()
@@ -183,3 +241,8 @@ def verify_keys(data: dict, valid_keys):
 
     if invalid_keys:
         raise InvalidKeysError(valid_keys, invalid_keys)
+
+
+def validate_user(jwt_user_id, recipe_user_id):
+    if jwt_user_id != str(recipe_user_id):
+        raise PermissionDeniedError
