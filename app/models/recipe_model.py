@@ -30,7 +30,7 @@ class RecipeModelSchema(Schema):
     serves = fields.Int()
     img_link = fields.Str()
     user_id = fields.Int()
-    ingredient = fields.Nested(IngredientSchema())
+    ingredients = fields.List(fields.Nested(IngredientSchema))
 
     links = Hyperlinks(
         {
