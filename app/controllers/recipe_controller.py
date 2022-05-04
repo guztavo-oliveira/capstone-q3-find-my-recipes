@@ -1,5 +1,6 @@
 import unidecode
 from http import HTTPStatus
+import uuid
 from flask import jsonify, request
 from ipdb import set_trace
 from app.configs.database import db
@@ -21,19 +22,49 @@ from app.models.recipe_ingredient_table import RecipeIngredientModel
 
 
 def get_recipes():
-
-    page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 10, type=int)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
     base_query = db.session.query(RecipeModel)
+    
+    all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(page=page, per_page=per_page)
 
-    all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
-        page=page, per_page=per_page
-    )
+    return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]), HTTPStatus.OK
 
-    return (
-        jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]),
-        HTTPStatus.OK,
-    )
+
+def recipes_by_category(category):
+    
+    try: 
+        base_query = db.session.query(RecipeModel)
+        chosen_recipes = base_query.filter_by(type=category).all()
+        return jsonify([RecipeModelSchema().dump(recipe) for recipe in chosen_recipes]), HTTPStatus.OK
+    
+    except NoResultFound:
+        return {"msg": "category does not exist"}, HTTPStatus.NOT_FOUND
+
+
+def get_a_recipe_by_id(recipe_id: str):
+    try:
+        recipe = db.session.get(RecipeModel, recipe_id)
+
+        return RecipeModelSchema().dump(recipe), HTTPStatus.O
+
+    except NoResultFound:
+        return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
+    
+    
+
+    # page = request.args.get("page", 1, type=int)
+    # per_page = request.args.get("per_page", 10, type=int)
+    # base_query = db.session.query(RecipeModel)
+
+    # all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
+    #     page=page, per_page=per_page
+    # )
+
+    # return (
+    #     jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]),
+    #     HTTPStatus.OK,
+    # )
 
 
 def get_recipes_by_category(category):
@@ -104,6 +135,7 @@ def get_recipe_by_ingredients():
     }
 
 
+
 @jwt_required()
 def post_a_recipe():
 
@@ -116,7 +148,7 @@ def post_a_recipe():
         "serves",
         "img_link",
         "user_id",
-        "ingredients",
+        "ingredients"
     ]
 
     session: Session = db.session
@@ -144,7 +176,7 @@ def post_a_recipe():
                 session.add(ingredient_name)
                 session.commit()
 
-            recipe.ingredients.append(ingredient_name)
+                recipe.ingredients.append(ingredient_name)
 
             session.add(recipe)
             session.commit()
@@ -194,15 +226,12 @@ def update_a_recipe(recipe_id):
 
         verify_keys(data, valid_keys)
 
-        recipe_to_update = RecipeModel.query.filter_by(recipe_id=recipe_id).one()
+        recipe_to_update = RecipeModel.query.filter_by(recipe_id=recipe_id).first()
 
         validate_user(user["user_id"], recipe_to_update.user_id)
 
         if "ingredients" in data.keys():
             ingredients = data.pop("ingredients")
-
-            for key, value in data.items():
-                setattr(recipe_to_update, key, value)
 
             for ingredient in ingredients:
                 ingredient_name = IngredientModel.query.filter(
@@ -214,27 +243,54 @@ def update_a_recipe(recipe_id):
                     db.session.add(ingredient_name)
                     db.session.commit()
 
-                recipe_to_update.ingredients.append(ingredient_name)
+                    recipe_to_update.ingredients.append(ingredient_name)
 
-                db.session.add(recipe_to_update)
-                db.session.commit()
+                    db.session.add(recipe_to_update)
+                    db.session.commit()
 
-                recipe_ingredient = RecipeIngredientModel.query.filter(
-                    RecipeIngredientModel.ingredient_id
-                    == ingredient_name.ingredient_id,
-                    RecipeIngredientModel.recipe_id == recipe_to_update.recipe_id,
-                ).first()
+                    recipe_ingredient = RecipeIngredientModel.query.filter(
+                        RecipeIngredientModel.ingredient_id
+                        == ingredient_name.ingredient_id,
+                        RecipeIngredientModel.recipe_id == recipe_to_update.recipe_id,
+                    ).first()
 
-                recipe_ingredient.amount = ingredient["amount"]
-                recipe_ingredient.unit = ingredient["unit"]
+                    recipe_ingredient.amount = ingredient["amount"]
+                    recipe_ingredient.unit = ingredient["unit"]
 
-                db.session.add(recipe_ingredient)
-                db.session.commit()
+                    db.session.add(recipe_ingredient)
+                    db.session.commit()
+
+                elif ingredient_name not in recipe_to_update.ingredients:
+                    recipe_to_update.ingredients.append(ingredient_name)
+                
+                else:
+                    recipe_ingredient = RecipeIngredientModel.query.filter(
+                        RecipeIngredientModel.ingredient_id
+                        == ingredient_name.ingredient_id,
+                        RecipeIngredientModel.recipe_id == recipe_to_update.recipe_id,
+                    ).first()
+
+                    for ingredient_from_recipe in recipe_to_update.ingredients:
+                        if ingredient_from_recipe.title == ingredient["title"]:
+                            recipe_ingredient.amount = ingredient["amount"]
+                            recipe_ingredient.unit = ingredient["unit"]
+
+                            db.session.add(recipe_ingredient)
+                            db.session.commit()
+        
+        
+        for key, value in data.items():
+            setattr(recipe_to_update, key, value)
 
         return (
+<<<<<<< HEAD
+            RecipeModelSchema(exclude=("user_id", "status")).dump(recipe_to_update),
+=======
             RecipeModelSchema().dumps(recipe_to_update),
+>>>>>>> 3e6e916d91f8e2f104d6137b25d21d8d0b369a90
             HTTPStatus.OK,
         )
+
 
     except InvalidKeysError as e:
         return e.message, HTTPStatus.BAD_REQUEST
@@ -271,7 +327,7 @@ def verify_keys(data: dict, valid_keys):
         raise InvalidKeysError(valid_keys, invalid_keys)
 
 
-def validate_user(jwt_user_id, recipe_user_id):
+def validate_user(jwt_user_id: str, recipe_user_id: uuid):
     if jwt_user_id != str(recipe_user_id):
         raise PermissionDeniedError
 
