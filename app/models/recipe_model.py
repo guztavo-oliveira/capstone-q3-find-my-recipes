@@ -6,7 +6,9 @@ from marshmallow import Schema, fields
 from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Text, values
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+
 from .recipe_ingredient_table import RecipeIngredientModel
+from .ingredient_model import IngredientSchema
 from flask_marshmallow.fields import Hyperlinks, URLFor
 
 
@@ -28,6 +30,7 @@ class RecipeModelSchema(Schema):
     serves = fields.Int()
     img_link = fields.Str()
     user_id = fields.Int()
+    ingredient = fields.Nested(IngredientSchema())
 
     links = Hyperlinks(
         {

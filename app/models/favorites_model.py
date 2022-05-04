@@ -1,6 +1,7 @@
 from app.configs.database import db
 from marshmallow import Schema, fields
 from sqlalchemy import Column, ForeignKey, Integer
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 
 
@@ -15,3 +16,5 @@ class FavoritesModel(db.Model):
     favorite_id = Column(Integer, primary_key=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("user.user_id"), nullable=False)
     reciped_id = Column(Integer, ForeignKey("recipes.recipe_id"), nullable=False)
+    
+    

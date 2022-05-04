@@ -20,10 +20,8 @@ class InsufficienDataKeyError(Exception):
         }
 
 class PermissionDeniedError(Exception):
-     def __init__(self):
-        self.message = {
-            "msg": "You are not allowed to execute this action"
-        }
+    def __init__(self):
+        self.message = {"msg": "You are not allowed to execute this action"}
 
 class InvalidEmailError(Exception):
     def __init__(self):
