@@ -230,14 +230,10 @@ def update_a_recipe(recipe_id):
         if "ingredients" in data.keys():
             ingredients = data.pop("ingredients")
 
-            print(recipe_to_update.ingredients)
-
             for ingredient in ingredients:
                 ingredient_name = IngredientModel.query.filter(
                     IngredientModel.title.like(ingredient["title"])
                 ).first()
-
-                # print(ingredient_name.title, ingredient["title"])
 
                 if not ingredient_name:
                     ingredient_name = IngredientModel(title=ingredient["title"])
@@ -284,7 +280,7 @@ def update_a_recipe(recipe_id):
             setattr(recipe_to_update, key, value)
 
         return (
-            RecipeModelSchema().dump(recipe_to_update),
+            RecipeModelSchema(exclude=("user_id", "status")).dump(recipe_to_update),
             HTTPStatus.OK,
         )
 
