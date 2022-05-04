@@ -7,6 +7,7 @@ from app.exc.user_exc import (
     InvalidValuesError,
     InvalidUserError,
     InsufficienDataKeyError,
+    InvalidEmailError,
 )
 from http import HTTPStatus
 from psycopg2.errors import UniqueViolation, InvalidTextRepresentation
@@ -48,13 +49,17 @@ def create_user():
     except InsufficienDataKeyError as e:
         return e.message, HTTPStatus.BAD_REQUEST
 
+    except InvalidEmailError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
+
     return UserModelSchema(only=("name", "email")).dump(user), HTTPStatus.CREATED
 
 
 def login():
     valid_keys = ["email", "password"]
-    data = request.get_json()
+
     try:
+        data = request.get_json()
         if not data:
             raise InsufficienDataKeyError(valid_keys)
 
@@ -116,6 +121,9 @@ def update_user():
         return e.message, HTTPStatus.UNAUTHORIZED
 
     except InsufficienDataKeyError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
+
+    except InvalidEmailError as e:
         return e.message, HTTPStatus.BAD_REQUEST
 
 

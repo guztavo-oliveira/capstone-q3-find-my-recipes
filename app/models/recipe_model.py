@@ -3,18 +3,24 @@ from uuid import uuid4
 
 from app.configs.database import db
 from marshmallow import Schema, fields
-from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Text, values
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+
 from .recipe_ingredient_table import RecipeIngredientModel
+from .ingredient_model import IngredientSchema
+from flask_marshmallow.fields import Hyperlinks, URLFor
 
 
 class MyEnum(enum.Enum):
-    NOT_VERIFIED = 0
-    VERIFIED = 1
+    not_verified = 0
+    verified = 1
 
 
 class RecipeModelSchema(Schema):
+    class Meta:
+        ordered = True
+
     recipe_id = fields.Int()
     title = fields.Str()
     time = fields.Str()
@@ -24,6 +30,15 @@ class RecipeModelSchema(Schema):
     serves = fields.Int()
     img_link = fields.Str()
     user_id = fields.Int()
+    ingredient = fields.Nested(IngredientSchema())
+
+    links = Hyperlinks(
+        {
+            "Show more": URLFor(
+                "recipe.get_a_recipe_by_id", values=dict(recipe_id="<recipe_id>")
+            )
+        }
+    )
 
 
 class RecipeModel(db.Model):
