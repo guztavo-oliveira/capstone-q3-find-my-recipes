@@ -24,6 +24,10 @@ class UnitEnum(enum.Enum):
     COLHER = "colher"
     UNIDADE = "unidade"
 
+    # Para retornar apenas o valor no IngredientSchema
+    def __str__(self):
+        return self.value
+
 
 class RecipeIngredientModel(db.Model):
 
