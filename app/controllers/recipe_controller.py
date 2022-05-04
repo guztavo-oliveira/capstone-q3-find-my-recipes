@@ -51,18 +51,18 @@ def get_a_recipe_by_id(recipe_id: str):
     
     
 
-    page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 10, type=int)
-    base_query = db.session.query(RecipeModel)
+    # page = request.args.get("page", 1, type=int)
+    # per_page = request.args.get("per_page", 10, type=int)
+    # base_query = db.session.query(RecipeModel)
 
-    all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
-        page=page, per_page=per_page
-    )
+    # all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
+    #     page=page, per_page=per_page
+    # )
 
-    return (
-        jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]),
-        HTTPStatus.OK,
-    )
+    # return (
+    #     jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]),
+    #     HTTPStatus.OK,
+    # )
 
 
 def get_recipes_by_category(category):
@@ -223,15 +223,16 @@ def update_a_recipe(recipe_id):
 
         verify_keys(data, valid_keys)
 
-        recipe_to_update = RecipeModel.query.filter_by(recipe_id=recipe_id).one()
+        recipe_to_update = RecipeModel.query.filter_by(recipe_id=recipe_id).first()
 
         validate_user(user["user_id"], recipe_to_update.user_id)
 
         if "ingredients" in data.keys():
             ingredients = data.pop("ingredients")
 
-            for key, value in data.items():
-                setattr(recipe_to_update, key, value)
+            
+
+            print(recipe_to_update)
 
             for ingredient in ingredients:
                 ingredient_name = IngredientModel.query.filter(
@@ -243,32 +244,31 @@ def update_a_recipe(recipe_id):
                     db.session.add(ingredient_name)
                     db.session.commit()
 
-                recipe_to_update.ingredients.append(ingredient_name)
+                    recipe_to_update.ingredients.append(ingredient_name)
 
-                db.session.add(recipe_to_update)
-                db.session.commit()
+                    db.session.add(recipe_to_update)
+                    db.session.commit()
 
-                recipe_ingredient = RecipeIngredientModel.query.filter(
-                    RecipeIngredientModel.ingredient_id
-                    == ingredient_name.ingredient_id,
-                    RecipeIngredientModel.recipe_id == recipe_to_update.recipe_id,
-                ).first()
+                    recipe_ingredient = RecipeIngredientModel.query.filter(
+                        RecipeIngredientModel.ingredient_id
+                        == ingredient_name.ingredient_id,
+                        RecipeIngredientModel.recipe_id == recipe_to_update.recipe_id,
+                    ).first()
 
-                recipe_ingredient.amount = ingredient["amount"]
-                recipe_ingredient.unit = ingredient["unit"]
+                    recipe_ingredient.amount = ingredient["amount"]
+                    recipe_ingredient.unit = ingredient["unit"]
 
-                db.session.add(recipe_ingredient)
-                db.session.commit()
-        # tem que arrumar o retorno, ele tá certo, mas parece que não tá formatado
-        return RecipeModelSchema(only=(
-            "title", "time", "type", "method", "status", "serves", "img_link"
-            )).dumps(recipe_to_update), HTTPStatus.OK
-
+                    db.session.add(recipe_ingredient)
+                    db.session.commit()
+        
+        
+        for key, value in data.items():
+            setattr(recipe_to_update, key, value)
 
         return (
             RecipeModelSchema(
                 only=("title", "time", "type", "method", "status", "serves", "img_link")
-            ).dumps(recipe_to_update),
+            ).dump(recipe_to_update),
             HTTPStatus.OK,
         )
 
