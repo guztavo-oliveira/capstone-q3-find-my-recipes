@@ -16,13 +16,13 @@ class RecipeIngredientSchema(Schema):
 
 
 class UnitEnum(enum.Enum):
-    quilo = "kg"
-    grama = "g"
-    litro = "l"
-    mililitro = "ml"
-    xicara = "xícara"
-    colher = "colher"
-    unidade = "unidade"
+    QUILO = "kg"
+    GRAMA = "g"
+    LITRO = "l"
+    MILILITRO = "ml"
+    XICARA = "xícara"
+    COLHER = "colher"
+    UNIDADE = "unidade"
 
 
 class RecipeIngredientModel(db.Model):
