@@ -19,8 +19,15 @@ class InsufficienDataKeyError(Exception):
             "msg": f"Insufficient keys! Must be at least this keys {valid_keys}"
         }
 
+
 class PermissionDeniedError(Exception):
      def __init__(self):
         self.message = {
             "msg": "You are not allowed to execute this action"
         }
+
+
+class InvalidEmailError(Exception):
+    def __init__(self):
+        self.message = {"msg": "Invalid email!"}
+

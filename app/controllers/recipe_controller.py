@@ -14,31 +14,67 @@ from app.models.recipe_ingredient_table import RecipeIngredientModel
 
 
 def get_recipes():
+    """
+    retorno deve ser como uma rota para a receita selecionada, igual ao usuário
+    """
 
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
-    base_query = db.session.query(RecipeModel)
-    
-    all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(page=page, per_page=per_page)
+    insert_ingredients = [item for item in request.args.get("ingredient").split(",")]
 
-    return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]), HTTPStatus.OK
+    ingredients_match_recipes = []
+    ingredients_not_match_recipes = []
+    for item in insert_ingredients:
+
+        recipe_ingredients = IngredientModel.query.filter_by(title=item).first()
+
+        if not recipe_ingredients:
+            ingredients_not_match_recipes.append(item)
+            continue
+
+        for recipe in recipe_ingredients.recipes:
+            if recipe not in ingredients_match_recipes:
+                ingredients_match_recipes.append(recipe)
+
+    return {
+        "recipes found with informed ingredients": [
+            RecipeModelSchema(
+                exclude=("user_id", "status", "recipe_id", "method", "img_link")
+            ).dump(recipes)
+            for recipes in ingredients_match_recipes
+        ],
+        "ingredients doesn't found in any recipe": [
+            ingredient for ingredient in ingredients_not_match_recipes
+        ],
+    }
+
+    # page = request.args.get('page', 1, type=int)
+    # per_page = request.args.get('per_page', 10, type=int)
+    # base_query = db.session.query(RecipeModel)
+    #
+    # all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(page=page, per_page=per_page)
+    #
+    # return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]), HTTPStatus.OK
+
 
 
 def recipes_by_category(category):
-    
-    try: 
+
+    try:
         base_query = db.session.query(RecipeModel)
         chosen_recipes = base_query.filter_by(type=category).all()
-        return jsonify([RecipeModelSchema().dump(recipe) for recipe in chosen_recipes]), HTTPStatus.OK
-    
+        return (
+            jsonify([RecipeModelSchema().dump(recipe) for recipe in chosen_recipes]),
+            HTTPStatus.OK,
+        )
+
     except NoResultFound:
         return {"msg": "category does not exist"}, HTTPStatus.NOT_FOUND
 
 
-def get_a_recipe_by_id(recipe_id):
+def get_a_recipe_by_id(recipe_id: str):
     try:
         recipe = db.session.get(RecipeModel, recipe_id)
-        return RecipeModelSchema().dump(recipe), HTTPStatus.OK
+
+        return RecipeModelSchema().dump(recipe), HTTPStatus.O
     except NoResultFound:
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
     
@@ -55,7 +91,7 @@ def post_a_recipe():
         "serves",
         "img_link",
         "user_id",
-        "ingredients"
+        "ingredients",
     ]
 
     session: Session = db.session
