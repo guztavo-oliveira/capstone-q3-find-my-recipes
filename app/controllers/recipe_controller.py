@@ -1,4 +1,5 @@
 from http import HTTPStatus
+import uuid
 from flask import jsonify, request
 from ipdb import set_trace
 from app.configs.database import db
@@ -167,7 +168,7 @@ def update_a_recipe(recipe_id):
 
                 db.session.add(recipe_ingredient)
                 db.session.commit()
-
+        # tem que arrumar o retorno, ele tá certo, mas parece que não tá formatado
         return RecipeModelSchema(only=(
             "title", "time", "type", "method", "status", "serves", "img_link"
             )).dumps(recipe_to_update), HTTPStatus.OK
@@ -207,6 +208,6 @@ def verify_keys(data: dict, valid_keys):
         raise InvalidKeysError(valid_keys, invalid_keys)
 
 
-def validate_user(jwt_user_id, recipe_user_id):
+def validate_user(jwt_user_id: str, recipe_user_id: uuid):
     if jwt_user_id != str(recipe_user_id):
         raise PermissionDeniedError
