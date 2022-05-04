@@ -35,11 +35,11 @@ def recipes_by_category(category):
     except NoResultFound:
         return {"msg": "category does not exist"}, HTTPStatus.NOT_FOUND
 
-def get_a_recipe_by_id(id):
+def get_a_recipe_by_id(recipe_id):
     try:
-        recipe = db.session.get(id)
+        recipe = db.session.get(RecipeModel, recipe_id)
 
-        return RecipeModelSchema.dump(recipe), HTTPStatus.OK
+        return RecipeModelSchema().dump(recipe), HTTPStatus.OK
 
     except NoResultFound:
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND

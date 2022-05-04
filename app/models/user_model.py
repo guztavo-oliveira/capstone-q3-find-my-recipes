@@ -8,7 +8,6 @@ from marshmallow import Schema, fields
 from app.models.recipe_model import RecipeModel, RecipeModelSchema
 from flask_marshmallow.fields import Hyperlinks, URLFor
 
-
 class UserModelSchema(Schema):
     class Meta:
         ordered = True
