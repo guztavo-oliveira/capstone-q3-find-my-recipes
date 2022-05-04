@@ -10,7 +10,6 @@ from flask_marshmallow.fields import Hyperlinks, URLFor
 import re
 from app.exc.user_exc import InvalidEmailError
 
-
 class UserModelSchema(Schema):
     class Meta:
         ordered = True
