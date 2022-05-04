@@ -174,7 +174,7 @@ def post_a_recipe():
                 session.add(ingredient_name)
                 session.commit()
 
-            recipe.ingredients.append(ingredient_name)
+                recipe.ingredients.append(ingredient_name)
 
             session.add(recipe)
             session.commit()
@@ -230,14 +230,14 @@ def update_a_recipe(recipe_id):
         if "ingredients" in data.keys():
             ingredients = data.pop("ingredients")
 
-            
-
-            print(recipe_to_update)
+            print(recipe_to_update.ingredients)
 
             for ingredient in ingredients:
                 ingredient_name = IngredientModel.query.filter(
                     IngredientModel.title.like(ingredient["title"])
                 ).first()
+
+                # print(ingredient_name.title, ingredient["title"])
 
                 if not ingredient_name:
                     ingredient_name = IngredientModel(title=ingredient["title"])
@@ -260,15 +260,31 @@ def update_a_recipe(recipe_id):
 
                     db.session.add(recipe_ingredient)
                     db.session.commit()
+
+                elif ingredient_name not in recipe_to_update.ingredients:
+                    recipe_to_update.ingredients.append(ingredient_name)
+                
+                else:
+                    recipe_ingredient = RecipeIngredientModel.query.filter(
+                        RecipeIngredientModel.ingredient_id
+                        == ingredient_name.ingredient_id,
+                        RecipeIngredientModel.recipe_id == recipe_to_update.recipe_id,
+                    ).first()
+
+                    for ingredient_from_recipe in recipe_to_update.ingredients:
+                        if ingredient_from_recipe.title == ingredient["title"]:
+                            recipe_ingredient.amount = ingredient["amount"]
+                            recipe_ingredient.unit = ingredient["unit"]
+
+                            db.session.add(recipe_ingredient)
+                            db.session.commit()
         
         
         for key, value in data.items():
             setattr(recipe_to_update, key, value)
 
         return (
-            RecipeModelSchema(
-                only=("title", "time", "type", "method", "status", "serves", "img_link")
-            ).dump(recipe_to_update),
+            RecipeModelSchema().dump(recipe_to_update),
             HTTPStatus.OK,
         )
 
