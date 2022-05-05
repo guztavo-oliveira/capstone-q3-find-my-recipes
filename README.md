@@ -151,9 +151,9 @@ Requisição **bem sucedida**, retorna a seguinte resposta.
 }
 ```
 
-Requisição **bem sucedida** , sem retorno.
+Requisição **bem sucedida**.
 
-`STATUS 204 - OK`
+`STATUS 200 - OK`
 
 ```json
 {
@@ -804,43 +804,13 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 
 <br />
 
-## Get by Id
-
-<br />
-
-**Rota necessita de autenticação**
-
-`GET/feed/<post-id>`
-
-```json
-NO BODY
-```
-
-Requisição **bem sucedida** retorna a seguinte resposta:
-
-`STATUS 200 - OK`
-
-```json
-{
-	"user_name": "kenzinho jonson da silva",
-	"feed_id": 3,
-	"publication_date": "2022-05-04 15:37:31.095870",
-	"publication": "A receita de arroz doce com cerveja fica top",
-	"icon": "miranha"
-}
-```
-
----
-
-<br />
-
 ## Get
 
 <br />
 
 **Rota necessita de autenticação**
 
-`GET/feed/<post-id>`
+`GET/feed`
 
 ```json
 NO BODY
@@ -877,6 +847,37 @@ Requisição **bem sucedida** retorna a seguinte resposta:
 ```
 
 ---
+
+<br />
+
+## Get by Id
+
+<br />
+
+**Rota necessita de autenticação**
+
+`GET/feed/<post-id>`
+
+```json
+NO BODY
+```
+
+Requisição **bem sucedida** retorna a seguinte resposta:
+
+`STATUS 200 - OK`
+
+```json
+{
+	"user_name": "kenzinho jonson da silva",
+	"feed_id": 3,
+	"publication_date": "2022-05-04 15:37:31.095870",
+	"publication": "A receita de arroz doce com cerveja fica top",
+	"icon": "miranha"
+}
+```
+
+---
+
 
 <br />
 
