@@ -4,7 +4,6 @@ import uuid
 from flask import jsonify, request
 from ipdb import set_trace
 from app.configs.database import db
-from app.exc.recipe_ingredient_exc import InvalidUnit
 from app.models.recipe_model import RecipeModel, RecipeModelSchema
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -28,23 +27,25 @@ def get_recipes():
     per_page = request.args.get("per_page", 10, type=int)
     base_query = db.session.query(RecipeModel)
 
+    all_recipes = RecipeModel.query.all()
     all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
         page=page, per_page=per_page
-    )
-
+    )    
     return (
-        jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]),
+        jsonify([RecipeModelSchema(only=("title", "type", "links", "serves", "time")).dump(recipe) for recipe in all_recipes.items]),
         HTTPStatus.OK,
-    )
+        )
 
 
 def get_recipes_by_category(category):
 
+    formated_category = unidecode.unidecode(category.lower().strip())
+
     try:
         base_query = db.session.query(RecipeModel)
-        chosen_recipes = base_query.filter_by(type=category).all()
+        chosen_recipes = base_query.filter_by(type=formated_category).all()
         return (
-            jsonify([RecipeModelSchema().dump(recipe) for recipe in chosen_recipes]),
+            jsonify([RecipeModelSchema(only=("title", "type", "links", "serves", "time")).dump(recipe) for recipe in chosen_recipes]),
             HTTPStatus.OK,
         )
 
