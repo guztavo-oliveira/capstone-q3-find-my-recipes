@@ -27,25 +27,32 @@ def get_recipes():
     per_page = request.args.get("per_page", 10, type=int)
     base_query = db.session.query(RecipeModel)
 
-    all_recipes = RecipeModel.query.all()
     all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
         page=page, per_page=per_page
     )    
     return (
-        jsonify([RecipeModelSchema(only=("title", "type", "links", "serves", "time")).dump(recipe) for recipe in all_recipes.items]),
+        jsonify([RecipeModelSchema(only=("title", "type", "links", "serves", "time")).dump(recipe) 
+        for recipe in all_recipes.items]),
         HTTPStatus.OK,
         )
 
 
 def get_recipes_by_category(category):
 
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    base_query = db.session.query(RecipeModel)
+
     formated_category = unidecode.unidecode(category.lower().strip())
 
     try:
-        base_query = db.session.query(RecipeModel)
-        chosen_recipes = base_query.filter_by(type=formated_category).all()
+        chosen_recipes = base_query.filter_by(type=formated_category).paginate(
+        page=page, per_page=per_page
+        )    
+        
         return (
-            jsonify([RecipeModelSchema(only=("title", "type", "links", "serves", "time")).dump(recipe) for recipe in chosen_recipes]),
+            jsonify([RecipeModelSchema(only=("title", "type", "links", "serves", "time")).dump(recipe) 
+            for recipe in chosen_recipes.items]),
             HTTPStatus.OK,
         )
 
