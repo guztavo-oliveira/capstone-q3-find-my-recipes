@@ -59,3 +59,6 @@ class RecipeModel(db.Model):
     ingredients = relationship(
         "IngredientModel", secondary="recipe_ingredient", back_populates="recipes"
     )
+
+    def __repr__(self):
+        return f"<Recipe {self.title}'>"
