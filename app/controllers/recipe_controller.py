@@ -355,7 +355,7 @@ def update_a_recipe(recipe_id):
     except InvalidKeysError as e:
         return e.message, HTTPStatus.BAD_REQUEST
 
-    except NoResultFound:
+    except (NoResultFound, AttributeError):
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
 
     except PermissionDeniedError as e:
@@ -396,6 +396,7 @@ def validate_user(jwt_user_id: str, recipe_user_id: uuid):
 
 
 required_units = ["QUILO", "GRAMA", "LITRO", "MILILITRO", "XICARA", "COLHER", "UNIDADE"]
+
 
 def unlisted_unit(inserted_unit):
     
