@@ -14,3 +14,5 @@ def validate_value_type(data: dict):
             isinstance(value, int)
         else:
             isinstance(value, str)
+
+        # fazer raise do invalid values
