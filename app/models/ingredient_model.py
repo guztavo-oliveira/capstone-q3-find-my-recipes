@@ -39,3 +39,6 @@ class IngredientModel(db.Model):
     # viewonly=True,
     # )
     amount = relationship("RecipeIngredientModel")
+
+    def __repr__(self):
+        return f"<{self.title}>"
