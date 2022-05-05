@@ -30,7 +30,7 @@ class IngredientModel(db.Model):
         "RecipeModel", secondary="recipe_ingredient", back_populates="ingredients"
     )
 
-    unit = relationship("RecipeIngredientModel")
+    unit = relationship("RecipeIngredientModel", viewonly=True)
     # unit = relationship(
     # "RecipeIngredientModel",
     # primaryjoin="foreign(RecipeIngredientModel.recipe_id) == remote(foreign(RecipeModel.recipe_id)) ",
@@ -38,7 +38,7 @@ class IngredientModel(db.Model):
     # primaryjoin="remote(RecipeModel.recipe_id) == (RecipeIngredientModel.recipe_id)",
     # viewonly=True,
     # )
-    amount = relationship("RecipeIngredientModel")
+    amount = relationship("RecipeIngredientModel", viewonly=True)
 
     def __repr__(self):
         return f"<{self.title}>"

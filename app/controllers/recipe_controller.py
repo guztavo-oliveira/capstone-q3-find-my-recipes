@@ -24,49 +24,18 @@ from app.models.recipe_ingredient_table import RecipeIngredientModel
 
 
 def get_recipes():
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
     base_query = db.session.query(RecipeModel)
-    
-    all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(page=page, per_page=per_page)
 
-    return jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]), HTTPStatus.OK
+    all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
+        page=page, per_page=per_page
+    )
 
-
-def recipes_by_category(category):
-    
-    try: 
-        base_query = db.session.query(RecipeModel)
-        chosen_recipes = base_query.filter_by(type=category).all()
-        return jsonify([RecipeModelSchema().dump(recipe) for recipe in chosen_recipes]), HTTPStatus.OK
-    
-    except NoResultFound:
-        return {"msg": "category does not exist"}, HTTPStatus.NOT_FOUND
-
-
-def get_a_recipe_by_id(recipe_id: str):
-    try:
-        recipe = db.session.get(RecipeModel, recipe_id)
-
-        return RecipeModelSchema().dump(recipe), HTTPStatus.O
-
-    except NoResultFound:
-        return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
-    
-    
-
-    # page = request.args.get("page", 1, type=int)
-    # per_page = request.args.get("per_page", 10, type=int)
-    # base_query = db.session.query(RecipeModel)
-
-    # all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
-    #     page=page, per_page=per_page
-    # )
-
-    # return (
-    #     jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]),
-    #     HTTPStatus.OK,
-    # )
+    return (
+        jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]),
+        HTTPStatus.OK,
+    )
 
 
 def get_recipes_by_category(category):
@@ -86,19 +55,41 @@ def get_recipes_by_category(category):
 def get_a_recipe_by_id(recipe_id: str):
     try:
         recipe = db.session.get(RecipeModel, recipe_id)
-
-        return (
-            RecipeModelSchema(exclude=("links", "user_id")).dump(recipe),
-            HTTPStatus.OK,
-        )
+        teste = {
+            "title": recipe.title,
+            "time": recipe.time,
+            "type": recipe.type,
+            "serves": recipe.serves,
+            "ingredients": [
+                {
+                    "title": ingredient.title,
+                    "unit": [
+                        unit.unit.value
+                        for unit in ingredient.unit
+                        if unit.recipe_id == recipe.recipe_id
+                    ],
+                    "amount": [
+                        amount.amount
+                        for amount in ingredient.amount
+                        if amount.recipe_id == recipe.recipe_id
+                    ],
+                }
+                for ingredient in recipe.ingredients
+            ],
+        }
+        # print(teste)
+        return jsonify(teste)
     except NoResultFound:
+        return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
+    except AttributeError:
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
 
 
 def get_recipe_by_ingredients():
 
     insert_ingredients = [
-        unidecode.unidecode(item.strip().lower()) for item in request.args.get("ingredient").split(",")
+        unidecode.unidecode(item.strip().lower())
+        for item in request.args.get("ingredient").split(",")
     ]
 
     ingredients_match_recipes = []
@@ -118,6 +109,9 @@ def get_recipe_by_ingredients():
         ):
             new_recipes.append(recipe)
     # set_trace()
+
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
 
     teste = [
         {
@@ -143,7 +137,7 @@ def get_recipe_by_ingredients():
             ],
         }
         for recipe in new_recipes
-    ]
+    ][(page - 1) * per_page : page * per_page]
 
     # print(teste)
 
@@ -196,10 +190,8 @@ def get_recipe_by_ingredients():
     # }
 
 
-
 @jwt_required()
 def post_a_recipe():
-
     valid_keys = [
         "title",
         "time",
@@ -209,63 +201,70 @@ def post_a_recipe():
         "serves",
         "img_link",
         "user_id",
-        "ingredients"
+        "ingredients",
     ]
-
     session: Session = db.session
     data = request.get_json()
-
     user: dict = get_jwt_identity()
-
     try:
-
         verify_keys(data, valid_keys)
         ingredients = data.pop("ingredients")
-
         data["user_id"] = user["user_id"]
-
         recipe = RecipeModel(**data)
-
         for ingredient in ingredients:
-
             ingredient_name = IngredientModel.query.filter(
-                IngredientModel.title.like(ingredient["title"])
+                IngredientModel.title.like(
+                    unidecode.unidecode(ingredient["title"].strip().lower())
+                )
             ).first()
-
             if not ingredient_name:
-                ingredient_name = IngredientModel(title=unidecode.unidecode(ingredient["title"].strip().lower()))
+                ingredient_name = IngredientModel(
+                    title=unidecode.unidecode(ingredient["title"].strip().lower())
+                )
                 session.add(ingredient_name)
                 session.commit()
-
-                recipe.ingredients.append(ingredient_name)
-
+            recipe.ingredients.append(ingredient_name)
             session.add(recipe)
             session.commit()
-
             recipe_ingredient = RecipeIngredientModel.query.filter(
                 RecipeIngredientModel.ingredient_id == ingredient_name.ingredient_id,
                 RecipeIngredientModel.recipe_id == recipe.recipe_id,
             ).first()
-
+            # set_trace()
             recipe_ingredient.amount = ingredient["amount"]
             recipe_ingredient.unit = unidecode.unidecode(ingredient["unit"].upper())
-
             if unlisted_unit(recipe_ingredient.unit):
                 return {"msg": f"Unidade deve ser uma dessas: {required_units}"}
-
             session.add(recipe_ingredient)
             session.commit()
-
     except InvalidKeysError as e:
         return e.message, HTTPStatus.BAD_REQUEST
-
     except InvalidValuesError as e:
         return e.message, HTTPStatus.BAD_REQUEST
-
-    return (
-        RecipeModelSchema().dump(recipe),
-        HTTPStatus.CREATED,
-    )
+    teste = {
+        "title": recipe.title,
+        "time": recipe.time,
+        "type": recipe.type,
+        "serves": recipe.serves,
+        "ingredients": [
+            {
+                "title": ingredient.title,
+                "unit": [
+                    unit.unit.value
+                    for unit in ingredient.unit
+                    if unit.recipe_id == recipe.recipe_id
+                ],
+                "amount": [
+                    amount.amount
+                    for amount in ingredient.amount
+                    if amount.recipe_id == recipe.recipe_id
+                ],
+            }
+            for ingredient in recipe.ingredients
+        ],
+    }
+    # print(teste)
+    return jsonify(teste)
 
 
 @jwt_required()
@@ -300,7 +299,9 @@ def update_a_recipe(recipe_id):
                 ).first()
 
                 if not ingredient_name:
-                    ingredient_name = IngredientModel(title=unidecode.unidecode(ingredient["title"].strip().lower()))
+                    ingredient_name = IngredientModel(
+                        title=unidecode.unidecode(ingredient["title"].strip().lower())
+                    )
                     db.session.add(ingredient_name)
                     db.session.commit()
 
@@ -323,7 +324,7 @@ def update_a_recipe(recipe_id):
 
                 elif ingredient_name not in recipe_to_update.ingredients:
                     recipe_to_update.ingredients.append(ingredient_name)
-                
+
                 else:
                     recipe_ingredient = RecipeIngredientModel.query.filter(
                         RecipeIngredientModel.ingredient_id
@@ -338,8 +339,7 @@ def update_a_recipe(recipe_id):
 
                             db.session.add(recipe_ingredient)
                             db.session.commit()
-        
-        
+
         for key, value in data.items():
             setattr(recipe_to_update, key, value)
 
@@ -350,7 +350,6 @@ def update_a_recipe(recipe_id):
             RecipeModelSchema(exclude=("user_id", "status")).dump(recipe_to_update),
             HTTPStatus.OK,
         )
-
 
     except InvalidKeysError as e:
         return e.message, HTTPStatus.BAD_REQUEST
@@ -397,8 +396,9 @@ def validate_user(jwt_user_id: str, recipe_user_id: uuid):
 
 required_units = ["QUILO", "GRAMA", "LITRO", "MILILITRO", "XICARA", "COLHER", "UNIDADE"]
 
+
 def unlisted_unit(inserted_unit):
-    
+
     for unit in required_units:
         if inserted_unit == unit:
             return False
