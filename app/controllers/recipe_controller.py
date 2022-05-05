@@ -103,38 +103,98 @@ def get_recipe_by_ingredients():
 
     ingredients_match_recipes = []
     ingredients_not_match_recipes = []
-    for item in insert_ingredients:
 
-        recipe_ingredients = IngredientModel.query.filter_by(title=item).first()
+    # CÓDIGO DO GUSTAVO
+    new_recipes = []
 
-        if not recipe_ingredients:
-            ingredients_not_match_recipes.append(item)
-            continue
+    recipes = RecipeModel.query.all()
+    print(insert_ingredients)
+    for recipe in recipes:
+        if all(
+            [
+                ingredient in [i.title for i in recipe.ingredients]
+                for ingredient in insert_ingredients
+            ]
+        ):
+            new_recipes.append(recipe)
+    # set_trace()
 
-        for recipe in recipe_ingredients.recipes:
-            if recipe not in ingredients_match_recipes:
-                ingredients_match_recipes.append(recipe)
-
-    if ingredients_not_match_recipes:
-        return {
-            "recipes found with informed ingredients": [
-                RecipeModelSchema(
-                    exclude=("user_id", "status", "recipe_id", "method", "img_link")
-                ).dump(recipes)
-                for recipes in ingredients_match_recipes
-            ],
-            "ingredients doesn't found in any recipe": [
-                ingredient for ingredient in ingredients_not_match_recipes
+    teste = [
+        {
+            "title": recipe.title,
+            "time": recipe.time,
+            "type": recipe.type,
+            "serves": recipe.serves,
+            "ingredients": [
+                {
+                    "title": ingredient.title,
+                    "unit": [
+                        unit.unit.value
+                        for unit in ingredient.unit
+                        if unit.recipe_id == recipe.recipe_id
+                    ],
+                    "amount": [
+                        amount.amount
+                        for amount in ingredient.amount
+                        if amount.recipe_id == recipe.recipe_id
+                    ],
+                }
+                for ingredient in recipe.ingredients
             ],
         }
-    return {
-        "recipes found with informed ingredients": [
-            RecipeModelSchema(
-                exclude=("user_id", "status", "recipe_id", "method", "img_link")
-            ).dump(recipes)
-            for recipes in ingredients_match_recipes
-        ]
-    }
+        for recipe in new_recipes
+    ]
+
+    # print(teste)
+    set_trace()
+
+    return jsonify(teste)
+
+    # for item in insert_ingredients:
+    #     recipe_ingredients = IngredientModel.query.filter_by(title=item).first()
+    #     # chamar todas as receitas do banco
+    #     # filtrar as receitas por ingrediente
+    #     # verificar se pelo um ingrediente esta presente na receita (recipe.ingredient)
+    #     # verificar se TODOS os ingredientes estão na receita (filter)
+    #     #
+
+    #     if not recipe_ingredients:
+    #         ingredients_not_match_recipes.append(item)
+    #         continue
+
+    #     for recipe in recipe_ingredients.recipes:
+    #         if recipe not in ingredients_match_recipes:
+    #             ingredients_match_recipes.append(recipe)
+
+    # page = request.args.get("page", 1, type=int)
+    # per_page = request.args.get("per_page", 10, type=int)
+
+    # if ingredients_not_match_recipes:
+    #     return {
+    #         "recipes found with informed ingredients": [
+    #             RecipeModelSchema(
+    #                 exclude=("user_id", "status", "recipe_id", "method", "img_link")
+    #             ).dump(recipes)
+    #             for recipes in ingredients_match_recipes
+    #         ],
+    #         "ingredients doesn't found in any recipe": [
+    #             ingredient for ingredient in ingredients_not_match_recipes
+    #         ],
+    #     }
+    # return {
+    #     "recipes found with informed ingredients": [
+    #         RecipeModelSchema(
+    #             exclude=(
+    #                 "user_id",
+    #                 "status",
+    #                 "recipe_id",
+    #                 "method",
+    #                 "img_link",
+    #             )
+    #         ).dump(recipes)
+    #         for recipes in ingredients_match_recipes
+    #     ][(page - 1) * per_page : page * per_page]
+    # }
 
 
 
