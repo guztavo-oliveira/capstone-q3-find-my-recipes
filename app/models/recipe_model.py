@@ -61,4 +61,4 @@ class RecipeModel(db.Model):
     )
 
     def __repr__(self):
-        return f"<Recipe {self.title}'>"
+        return f"<Recipe {self.title}>"

@@ -1,6 +1,6 @@
 from flask import Flask
 from dotenv import load_dotenv
-from app.configs import database, migration, jwt_auth
+from app.configs import database, migration, jwt_auth, email
 from app import routes
 
 from app.admin import admin
@@ -25,6 +25,7 @@ def create_app():
     admin.init_app(app)
     admin.add_view(UserAdmin(UserModel, app.db.session))
     admin.add_view(RecipeAdmin(RecipeModel, app.db.session))
+    # email.init_app(app)
     routes.init_app(app)
 
     return app
