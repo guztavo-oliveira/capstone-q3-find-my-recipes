@@ -4,7 +4,7 @@ from app.configs.database import db
 from app.exc.recipe_ingredient_exc import InvalidAmount, InvalidUnit
 from marshmallow import Schema, fields
 from sqlalchemy import Column, Enum, Float, ForeignKey, Integer, String
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, relationship
 
 
 class RecipeIngredientSchema(Schema):
