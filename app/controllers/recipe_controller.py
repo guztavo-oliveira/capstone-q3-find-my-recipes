@@ -98,7 +98,7 @@ def get_a_recipe_by_id(recipe_id: str):
 def get_recipe_by_ingredients():
 
     insert_ingredients = [
-        item.strip() for item in request.args.get("ingredient").split(",")
+        unidecode.unidecode(item.strip().lower()) for item in request.args.get("ingredient").split(",")
     ]
 
     ingredients_match_recipes = []
@@ -146,7 +146,6 @@ def get_recipe_by_ingredients():
     ]
 
     # print(teste)
-    set_trace()
 
     return jsonify(teste)
 
@@ -234,7 +233,7 @@ def post_a_recipe():
             ).first()
 
             if not ingredient_name:
-                ingredient_name = IngredientModel(title=ingredient["title"])
+                ingredient_name = IngredientModel(title=unidecode.unidecode(ingredient["title"].strip().lower()))
                 session.add(ingredient_name)
                 session.commit()
 
@@ -301,7 +300,7 @@ def update_a_recipe(recipe_id):
                 ).first()
 
                 if not ingredient_name:
-                    ingredient_name = IngredientModel(title=ingredient["title"])
+                    ingredient_name = IngredientModel(title=unidecode.unidecode(ingredient["title"].strip().lower()))
                     db.session.add(ingredient_name)
                     db.session.commit()
 
