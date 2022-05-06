@@ -1,23 +1,19 @@
-from app.configs.database import db
-from flask import jsonify, request
-
-# from ipdb import set_trace
-from app.exc.user_exc import (
-    InvalidKeysError,
-    InvalidValuesError,
-    InvalidUserError,
-    InsufficienDataKeyError,
-    InvalidEmailError,
-)
 from http import HTTPStatus
-from psycopg2.errors import UniqueViolation, InvalidTextRepresentation
-from sqlalchemy.exc import IntegrityError, DataError
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
-
-from app.models.user_model import UserModel, UserModelSchema
-from app.models.recipe_model import RecipeModelSchema
+from app.configs.database import db
+from app.exc.user_exc import (InsufficienDataKeyError, InvalidEmailError,
+                              InvalidKeysError, InvalidUserError,
+                              InvalidValuesError)
 from app.models.feed_model import FeedModel, FeedModelSchema
+from app.models.recipe_model import RecipeModelSchema
+from app.models.user_model import UserModel, UserModelSchema
+from app.services.validations import (serialize_data,
+                                      validate_keys_and_value_type)
+from flask import jsonify, request
+from flask_jwt_extended import (create_access_token, get_jwt_identity,
+                                jwt_required)
+from psycopg2.errors import InvalidTextRepresentation, UniqueViolation
+from sqlalchemy.exc import DataError, IntegrityError
 
 
 def create_user():
@@ -29,7 +25,8 @@ def create_user():
         if not data:
             raise InsufficienDataKeyError(valid_keys)
 
-        verify_keys(data, valid_keys)
+        validate_keys_and_value_type(data, valid_keys)
+
         data["account_type"] = "admin"
 
         user = UserModel(**data)
@@ -63,7 +60,7 @@ def login():
         if not data:
             raise InsufficienDataKeyError(valid_keys)
 
-        verify_keys(data, valid_keys)
+        validate_keys_and_value_type(data, valid_keys)
 
         user: UserModel = UserModel.query.filter_by(email=data["email"]).first()
 
@@ -101,7 +98,7 @@ def update_user():
         user: UserModel = get_jwt_identity()
         user = UserModel.query.filter_by(email=user["email"]).first()
 
-        verify_keys(data, valid_keys, update=True)
+        validate_keys_and_value_type(data, valid_keys, update=True)
 
         for key, value in data.items():
             setattr(user, key, value)
@@ -168,7 +165,6 @@ def get_user_favorite_recipe(id: str):
 @jwt_required()
 def get_recipe_by_user(id: str):
     user = UserModel.query.filter_by(user_id=id).first()
-    set_trace()
     return jsonify(
         [RecipeModelSchema(only=("title",)).dump(item) for item in user.recipe_by_user]
     )
@@ -180,27 +176,3 @@ def get_user_feed(id: str):
 
     return jsonify([FeedModelSchema().dump(item) for item in user.feed])
 
-
-def verify_keys(data: dict, valid_keys, update=False):
-
-    invalid_keys = []
-
-    if not update:
-        if len(data) < len(valid_keys):
-            raise InsufficienDataKeyError(valid_keys)
-
-    if update:
-        for key, value in data.items():
-            if key not in tuple(valid_keys):
-                raise InvalidKeysError(valid_keys, key)
-            if not isinstance(value, str):
-                raise InvalidValuesError(key, value)
-
-    for key, value in data.items():
-        if key not in valid_keys:
-            invalid_keys.append(key)
-        if not isinstance(value, str):
-            raise InvalidValuesError(key, value)
-
-    if invalid_keys:
-        raise InvalidKeysError(valid_keys, invalid_keys)
