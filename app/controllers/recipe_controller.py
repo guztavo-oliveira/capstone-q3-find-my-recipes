@@ -4,7 +4,6 @@ import uuid
 from flask import jsonify, request
 from ipdb import set_trace
 from app.configs.database import db
-from app.exc.recipe_ingredient_exc import InvalidUnit
 from app.models.recipe_model import RecipeModel, RecipeModelSchema
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -21,6 +20,7 @@ from sqlalchemy.exc import DataError
 from http import HTTPStatus
 from app.models.ingredient_model import IngredientModel
 from app.models.recipe_ingredient_table import RecipeIngredientModel
+from app.services.validations import serialize_data, validate_keys_and_value_type
 
 
 def get_recipes():
@@ -31,20 +31,41 @@ def get_recipes():
     all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
         page=page, per_page=per_page
     )
-
     return (
-        jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]),
+        jsonify(
+            [
+                RecipeModelSchema(
+                    only=("title", "type", "links", "serves", "time")
+                ).dump(recipe)
+                for recipe in all_recipes.items
+            ]
+        ),
         HTTPStatus.OK,
     )
 
 
 def get_recipes_by_category(category):
 
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    base_query = db.session.query(RecipeModel)
+
+    formated_category = unidecode.unidecode(category.lower().strip())
+
     try:
-        base_query = db.session.query(RecipeModel)
-        chosen_recipes = base_query.filter_by(type=category).all()
+        chosen_recipes = base_query.filter_by(type=formated_category).paginate(
+            page=page, per_page=per_page
+        )
+
         return (
-            jsonify([RecipeModelSchema().dump(recipe) for recipe in chosen_recipes]),
+            jsonify(
+                [
+                    RecipeModelSchema(
+                        only=("title", "type", "links", "serves", "time")
+                    ).dump(recipe)
+                    for recipe in chosen_recipes.items
+                ]
+            ),
             HTTPStatus.OK,
         )
 
@@ -79,9 +100,7 @@ def get_a_recipe_by_id(recipe_id: str):
         }
         # print(teste)
         return jsonify(teste)
-    except NoResultFound:
-        return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
-    except AttributeError:
+    except (NoResultFound, AttributeError):
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
 
 
@@ -108,7 +127,6 @@ def get_recipe_by_ingredients():
             ]
         ):
             new_recipes.append(recipe)
-    # set_trace()
 
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 10, type=int)
@@ -197,17 +215,17 @@ def post_a_recipe():
         "time",
         "type",
         "method",
-        "status",
         "serves",
         "img_link",
-        "user_id",
-        "ingredients",
+        "ingredients"
     ]
     session: Session = db.session
     data = request.get_json()
     user: dict = get_jwt_identity()
     try:
-        verify_keys(data, valid_keys)
+
+        validate_keys_and_value_type(data, valid_keys)
+        serialize_data(data)
         ingredients = data.pop("ingredients")
         data["user_id"] = user["user_id"]
         recipe = RecipeModel(**data)
@@ -230,7 +248,7 @@ def post_a_recipe():
                 RecipeIngredientModel.ingredient_id == ingredient_name.ingredient_id,
                 RecipeIngredientModel.recipe_id == recipe.recipe_id,
             ).first()
-            # set_trace()
+            
             recipe_ingredient.amount = ingredient["amount"]
             recipe_ingredient.unit = unidecode.unidecode(ingredient["unit"].upper())
             if unlisted_unit(recipe_ingredient.unit):
@@ -284,7 +302,8 @@ def update_a_recipe(recipe_id):
             "ingredients",
         ]
 
-        verify_keys(data, valid_keys)
+        validate_keys_and_value_type(data, valid_keys, update=True)
+        serialize_data(data)
 
         recipe_to_update = RecipeModel.query.filter_by(recipe_id=recipe_id).first()
 
@@ -375,18 +394,6 @@ def delete_a_recipe(recipe_id):
 
     except DataError:
         return {"msg": "Recipe id must be an integer"}, HTTPStatus.NOT_FOUND
-
-
-def verify_keys(data: dict, valid_keys):
-
-    invalid_keys = []
-
-    for key, _ in data.items():
-        if key not in valid_keys:
-            invalid_keys.append(key)
-
-    if invalid_keys:
-        raise InvalidKeysError(valid_keys, invalid_keys)
 
 
 def validate_user(jwt_user_id: str, recipe_user_id: uuid):

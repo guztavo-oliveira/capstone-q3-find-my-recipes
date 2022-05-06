@@ -1,5 +1,5 @@
 from app.configs.database import db
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Boolean
 from sqlalchemy.orm import relationship, validates
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.dialects.postgresql import UUID
@@ -43,6 +43,7 @@ class UserModel(db.Model):
     email = Column(String, nullable=False, unique=True)
     password_hash = Column(String, nullable=False)
     account_type = Column(String, nullable=False)
+    confirmed = Column(Boolean, nullable=False, default=False)
 
     recipe_favorites = relationship("RecipeModel", secondary="favorites")
     recipe_by_user = relationship("RecipeModel", back_populates="made_by_user")
