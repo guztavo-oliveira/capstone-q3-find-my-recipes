@@ -1,3 +1,17 @@
+<<<<<<< HEAD
+=======
+from app.configs.database import db
+from flask import jsonify, request, url_for
+
+from ipdb import set_trace
+from app.exc.user_exc import (
+    InvalidKeysError,
+    InvalidValuesError,
+    InvalidUserError,
+    InsufficienDataKeyError,
+    InvalidEmailError,
+)
+>>>>>>> d2c4f4169ee503b70d684209a89a883796e57d0a
 from http import HTTPStatus
 
 from app.configs.database import db
@@ -15,6 +29,9 @@ from flask_jwt_extended import (create_access_token, get_jwt_identity,
 from psycopg2.errors import InvalidTextRepresentation, UniqueViolation
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.utils.email_token import generate_confirmation_token, confirm_token
+from app.utils.send_email import send_email
+
 
 def create_user():
     valid_keys = ["name", "email", "password"]
@@ -30,6 +47,8 @@ def create_user():
         data["account_type"] = "admin"
 
         user = UserModel(**data)
+
+        create_and_send_email(user)
 
         db.session.add(user)
         db.session.commit()
@@ -66,6 +85,11 @@ def login():
 
         if not user or not user.check_password(data["password"]):
             raise InvalidUserError
+
+        if user.confirmed is False:
+            return (
+                {"message": "The user account is not activated yet"}
+            ), HTTPStatus.FORBIDDEN
 
         token = create_access_token(
             UserModelSchema(only=("name", "email", "user_id")).dump(user)
@@ -176,3 +200,34 @@ def get_user_feed(id: str):
 
     return jsonify([FeedModelSchema().dump(item) for item in user.feed])
 
+
+def create_and_send_email(user: UserModel):
+    email_token = generate_confirmation_token(user.email)
+
+    link = url_for("user.validate_user", token=email_token, _external=True)
+
+    send_email(link, user.email, user.name)
+
+
+def validate_user():
+    token = request.args.get("token")
+    email = confirm_token(token)
+
+    if email is False:
+        return {"msg": "Invalid token or token expired"}, HTTPStatus.BAD_REQUEST
+
+    user: UserModel = UserModel.query.filter_by(email=email).first()
+
+    if not user:
+        return {"msg": "User not found"}, HTTPStatus.NOT_FOUND
+
+    if user.confirmed is True:
+        return (
+            {"msg": "The user account is already activated"},
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    user.confirmed = True
+
+    db.session.commit()
+    return {"msg": "Account verified with success! It's time to  login!"}, HTTPStatus.OK
