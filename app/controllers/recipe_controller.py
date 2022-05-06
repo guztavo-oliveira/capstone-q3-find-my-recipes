@@ -99,9 +99,7 @@ def get_a_recipe_by_id(recipe_id: str):
         }
         # print(teste)
         return jsonify(teste)
-    except NoResultFound:
-        return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
-    except AttributeError:
+    except (NoResultFound, AttributeError):
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
 
 
@@ -250,7 +248,7 @@ def post_a_recipe():
                 RecipeIngredientModel.ingredient_id == ingredient_name.ingredient_id,
                 RecipeIngredientModel.recipe_id == recipe.recipe_id,
             ).first()
-            # set_trace()
+            
             recipe_ingredient.amount = ingredient["amount"]
             recipe_ingredient.unit = unidecode.unidecode(ingredient["unit"].upper())
             if unlisted_unit(recipe_ingredient.unit):
