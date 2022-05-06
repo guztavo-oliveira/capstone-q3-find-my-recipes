@@ -29,12 +29,18 @@ def get_recipes():
 
     all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
         page=page, per_page=per_page
-    )    
+    )
     return (
-        jsonify([RecipeModelSchema(only=("title", "type", "links", "serves", "time")).dump(recipe) 
-        for recipe in all_recipes.items]),
+        jsonify(
+            [
+                RecipeModelSchema(
+                    only=("title", "type", "links", "serves", "time")
+                ).dump(recipe)
+                for recipe in all_recipes.items
+            ]
+        ),
         HTTPStatus.OK,
-        )
+    )
 
 
 def get_recipes_by_category(category):
@@ -47,12 +53,18 @@ def get_recipes_by_category(category):
 
     try:
         chosen_recipes = base_query.filter_by(type=formated_category).paginate(
-        page=page, per_page=per_page
-        )    
-        
+            page=page, per_page=per_page
+        )
+
         return (
-            jsonify([RecipeModelSchema(only=("title", "type", "links", "serves", "time")).dump(recipe) 
-            for recipe in chosen_recipes.items]),
+            jsonify(
+                [
+                    RecipeModelSchema(
+                        only=("title", "type", "links", "serves", "time")
+                    ).dump(recipe)
+                    for recipe in chosen_recipes.items
+                ]
+            ),
             HTTPStatus.OK,
         )
 
