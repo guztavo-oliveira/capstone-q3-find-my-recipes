@@ -18,6 +18,7 @@ from sqlalchemy.exc import DataError
 from http import HTTPStatus
 from app.models.ingredient_model import IngredientModel
 from app.models.recipe_ingredient_table import RecipeIngredientModel
+from app.models.user_model import UserModel
 from app.services.validations import serialize_data, validate_keys_and_value_type
 
 
@@ -336,7 +337,11 @@ def update_a_recipe(recipe_id):
 def delete_a_recipe(recipe_id):
     try:
         session: Session = db.session
+        user: UserModel = get_jwt_identity()
         recipe: RecipeModel = RecipeModel.query.filter_by(recipe_id=recipe_id).first()
+
+        validate_user(user["user_id"], recipe.user_id)
+
         session.delete(recipe)
         session.commit()
         return "", HTTPStatus.NO_CONTENT
@@ -347,16 +352,17 @@ def delete_a_recipe(recipe_id):
     except DataError:
         return {"msg": "Recipe id must be an integer"}, HTTPStatus.NOT_FOUND
 
+    except PermissionDeniedError as e:
+        return e.message, HTTPStatus.UNAUTHORIZED
+
 
 def validate_user(jwt_user_id: str, recipe_user_id: uuid):
     if jwt_user_id != str(recipe_user_id):
         raise PermissionDeniedError
 
 
-required_units = ["QUILO", "GRAMA", "LITRO", "MILILITRO", "XICARA", "COLHER", "UNIDADE"]
-
-
 def unlisted_unit(inserted_unit):
+    required_units = ["QUILO", "GRAMA", "LITRO", "MILILITRO", "XICARA", "COLHER", "UNIDADE"]
 
     for unit in required_units:
         if inserted_unit == unit:
