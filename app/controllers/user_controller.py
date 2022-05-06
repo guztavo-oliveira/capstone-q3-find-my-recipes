@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from datetime import timedelta
 
 from app.configs.database import db
 from app.exc.user_exc import (
@@ -80,7 +81,8 @@ def login():
             ), HTTPStatus.FORBIDDEN
 
         token = create_access_token(
-            UserModelSchema(only=("name", "email", "user_id")).dump(user)
+            UserModelSchema(only=("name", "email", "user_id")).dump(user),
+            expires_delta=timedelta(minutes=60),
         )
 
         return {"token": token}

@@ -169,7 +169,7 @@ def post_a_recipe():
         "method",
         "serves",
         "img_link",
-        "ingredients"
+        "ingredients",
     ]
     session: Session = db.session
     data = request.get_json()
@@ -200,7 +200,7 @@ def post_a_recipe():
                 RecipeIngredientModel.ingredient_id == ingredient_name.ingredient_id,
                 RecipeIngredientModel.recipe_id == recipe.recipe_id,
             ).first()
-            
+
             recipe_ingredient.amount = ingredient["amount"]
             recipe_ingredient.unit = unidecode.unidecode(ingredient["unit"].upper())
             if unlisted_unit(recipe_ingredient.unit):
@@ -234,7 +234,7 @@ def post_a_recipe():
             for ingredient in recipe.ingredients
         ],
     }
-    
+
     return jsonify(teste)
 
 
@@ -361,8 +361,10 @@ def validate_user(jwt_user_id: str, recipe_user_id: uuid):
         raise PermissionDeniedError
 
 
+required_units = ["QUILO", "GRAMA", "LITRO", "MILILITRO", "XICARA", "COLHER", "UNIDADE"]
+
+
 def unlisted_unit(inserted_unit):
-    required_units = ["QUILO", "GRAMA", "LITRO", "MILILITRO", "XICARA", "COLHER", "UNIDADE"]
 
     for unit in required_units:
         if inserted_unit == unit:
