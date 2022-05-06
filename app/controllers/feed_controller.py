@@ -1,12 +1,15 @@
 from datetime import datetime as dt
 from http import HTTPStatus
 
+from app.exc.user_exc import InvalidKeysError, InvalidValuesError, InsufficienDataKeyError
+
 from app.configs.database import db
-from app.controllers import valid_key_request
 from app.models.feed_model import FeedModel, FeedModelSchema
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy.orm.session import Session
+
+from app.services.validations import validate_keys_and_value_type
 
 
 @jwt_required()
@@ -36,68 +39,76 @@ def get_a_publication(post_id: int):
 
 @jwt_required()
 def post_a_publication():
+    try:
+        session: Session = db.session
 
-    session: Session = db.session
+        data = request.get_json()
+        user = get_jwt_identity()
 
-    data = request.get_json()
-    user = get_jwt_identity()
+        expected_keys = ["publication", "icon"]
 
-    expected_keys = {"publication", "icon"}
-    required_keys = {"publication"}
+        validate_keys_and_value_type(data, expected_keys)
 
-    validated = valid_key_request(data, expected_keys, required_keys)
+        user_name = user["name"]
+        user_id = user["user_id"]
 
-    if validated:
+        data = {"user_id": user_id, "user_name": user_name, **data}
 
-        return validated, HTTPStatus.BAD_REQUEST
+        new_feed = FeedModel(**data)
 
-    user_name = user["name"]
-    user_id = user["user_id"]
+        new_feed.publication_date = dt.now()
+        new_feed.user_id = user_id
+        new_feed.user_name = user_name
 
-    data = {"user_id": user_id, "user_name": user_name, **data}
+        session.add(new_feed)
+        session.commit()
 
-    new_feed = FeedModel(**data)
+        return FeedModelSchema().dump(new_feed), HTTPStatus.CREATED
+    
+    except InvalidKeysError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
 
-    new_feed.publication_date = dt.now()
-    new_feed.user_id = user_id
-    new_feed.user_name = user_name
+    except InvalidValuesError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
 
-    session.add(new_feed)
-    session.commit()
-
-    return FeedModelSchema().dump(new_feed), HTTPStatus.CREATED
+    except InsufficienDataKeyError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
 def update_a_publication(post_id: int):
+    try:
+        data = request.get_json()
+        user = get_jwt_identity()
 
-    data = request.get_json()
-    user = get_jwt_identity()
+        expected_keys = ["publication", "icon"]
 
-    expected_keys = {"publication", "icon"}
-    required_keys = {"publication"}
+        validate_keys_and_value_type(data, expected_keys)
 
-    validated = valid_key_request(data, expected_keys, required_keys)
+        feed: FeedModel = FeedModel.query.get(post_id)
 
-    if validated:
+        if not feed:
+            return {"msg": "Id not found"}, HTTPStatus.NOT_FOUND
 
-        return validated, HTTPStatus.BAD_REQUEST
+        if str(feed.user_id) == user["user_id"]:
 
-    feed: FeedModel = FeedModel.query.get(post_id)
+            for key, value in data.items():
+                setattr(feed, key, value)
 
-    if not feed:
-        return {"msg": "Id not found"}, HTTPStatus.NOT_FOUND
+            db.session.commit()
 
-    if str(feed.user_id) == user["user_id"]:
+            return FeedModelSchema().dump(feed), HTTPStatus.OK
 
-        for key, value in data.items():
-            setattr(feed, key, value)
+        return {"msg": "Only the owner can make changes"}, HTTPStatus.UNAUTHORIZED
 
-        db.session.commit()
+    except InvalidKeysError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
 
-        return FeedModelSchema().dump(feed), HTTPStatus.OK
+    except InvalidValuesError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
 
-    return {"msg": "Only the owner can make changes"}, HTTPStatus.UNAUTHORIZED
+    except InsufficienDataKeyError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
