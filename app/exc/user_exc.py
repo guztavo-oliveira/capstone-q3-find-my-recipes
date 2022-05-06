@@ -21,7 +21,7 @@ class InsufficienDataKeyError(Exception):
 
 class PermissionDeniedError(Exception):
     def __init__(self):
-        self.message = {"msg": "You are not allowed to execute this action"}
+        self.message = {"msg": "You are not the owner of this item!"}
 
 class InvalidEmailError(Exception):
     def __init__(self):

@@ -2,7 +2,6 @@ import unidecode
 from http import HTTPStatus
 import uuid
 from flask import jsonify, request
-from ipdb import set_trace
 from app.configs.database import db
 from app.models.recipe_model import RecipeModel, RecipeModelSchema
 from flask import jsonify, request
@@ -12,7 +11,6 @@ from sqlalchemy.orm import Session
 from app.exc.user_exc import (
     InvalidKeysError,
     InvalidValuesError,
-    InvalidUserError,
     PermissionDeniedError,
 )
 from sqlalchemy.orm.exc import UnmappedInstanceError
@@ -20,6 +18,7 @@ from sqlalchemy.exc import DataError
 from http import HTTPStatus
 from app.models.ingredient_model import IngredientModel
 from app.models.recipe_ingredient_table import RecipeIngredientModel
+from app.models.user_model import UserModel
 from app.services.validations import serialize_data, validate_keys_and_value_type
 
 
@@ -81,6 +80,7 @@ def get_a_recipe_by_id(recipe_id: str):
             "time": recipe.time,
             "type": recipe.type,
             "serves": recipe.serves,
+            "method": recipe.method,
             "ingredients": [
                 {
                     "title": ingredient.title,
@@ -98,7 +98,7 @@ def get_a_recipe_by_id(recipe_id: str):
                 for ingredient in recipe.ingredients
             ],
         }
-        # print(teste)
+
         return jsonify(teste)
     except (NoResultFound, AttributeError):
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
@@ -114,7 +114,6 @@ def get_recipe_by_ingredients():
     ingredients_match_recipes = []
     ingredients_not_match_recipes = []
 
-    # CÓDIGO DO GUSTAVO
     new_recipes = []
 
     recipes = RecipeModel.query.all()
@@ -137,6 +136,7 @@ def get_recipe_by_ingredients():
             "time": recipe.time,
             "type": recipe.type,
             "serves": recipe.serves,
+            "method": recipe.method,
             "ingredients": [
                 {
                     "title": ingredient.title,
@@ -157,55 +157,7 @@ def get_recipe_by_ingredients():
         for recipe in new_recipes
     ][(page - 1) * per_page : page * per_page]
 
-    # print(teste)
-
     return jsonify(teste)
-
-    # for item in insert_ingredients:
-    #     recipe_ingredients = IngredientModel.query.filter_by(title=item).first()
-    #     # chamar todas as receitas do banco
-    #     # filtrar as receitas por ingrediente
-    #     # verificar se pelo um ingrediente esta presente na receita (recipe.ingredient)
-    #     # verificar se TODOS os ingredientes estão na receita (filter)
-    #     #
-
-    #     if not recipe_ingredients:
-    #         ingredients_not_match_recipes.append(item)
-    #         continue
-
-    #     for recipe in recipe_ingredients.recipes:
-    #         if recipe not in ingredients_match_recipes:
-    #             ingredients_match_recipes.append(recipe)
-
-    # page = request.args.get("page", 1, type=int)
-    # per_page = request.args.get("per_page", 10, type=int)
-
-    # if ingredients_not_match_recipes:
-    #     return {
-    #         "recipes found with informed ingredients": [
-    #             RecipeModelSchema(
-    #                 exclude=("user_id", "status", "recipe_id", "method", "img_link")
-    #             ).dump(recipes)
-    #             for recipes in ingredients_match_recipes
-    #         ],
-    #         "ingredients doesn't found in any recipe": [
-    #             ingredient for ingredient in ingredients_not_match_recipes
-    #         ],
-    #     }
-    # return {
-    #     "recipes found with informed ingredients": [
-    #         RecipeModelSchema(
-    #             exclude=(
-    #                 "user_id",
-    #                 "status",
-    #                 "recipe_id",
-    #                 "method",
-    #                 "img_link",
-    #             )
-    #         ).dump(recipes)
-    #         for recipes in ingredients_match_recipes
-    #     ][(page - 1) * per_page : page * per_page]
-    # }
 
 
 @jwt_required()
@@ -264,6 +216,7 @@ def post_a_recipe():
         "time": recipe.time,
         "type": recipe.type,
         "serves": recipe.serves,
+        "method": recipe.method,
         "ingredients": [
             {
                 "title": ingredient.title,
@@ -281,7 +234,7 @@ def post_a_recipe():
             for ingredient in recipe.ingredients
         ],
     }
-    # print(teste)
+    
     return jsonify(teste)
 
 
@@ -384,7 +337,11 @@ def update_a_recipe(recipe_id):
 def delete_a_recipe(recipe_id):
     try:
         session: Session = db.session
+        user: UserModel = get_jwt_identity()
         recipe: RecipeModel = RecipeModel.query.filter_by(recipe_id=recipe_id).first()
+
+        validate_user(user["user_id"], recipe.user_id)
+
         session.delete(recipe)
         session.commit()
         return "", HTTPStatus.NO_CONTENT
@@ -395,16 +352,17 @@ def delete_a_recipe(recipe_id):
     except DataError:
         return {"msg": "Recipe id must be an integer"}, HTTPStatus.NOT_FOUND
 
+    except PermissionDeniedError as e:
+        return e.message, HTTPStatus.UNAUTHORIZED
+
 
 def validate_user(jwt_user_id: str, recipe_user_id: uuid):
     if jwt_user_id != str(recipe_user_id):
         raise PermissionDeniedError
 
 
-required_units = ["QUILO", "GRAMA", "LITRO", "MILILITRO", "XICARA", "COLHER", "UNIDADE"]
-
-
 def unlisted_unit(inserted_unit):
+    required_units = ["QUILO", "GRAMA", "LITRO", "MILILITRO", "XICARA", "COLHER", "UNIDADE"]
 
     for unit in required_units:
         if inserted_unit == unit:
