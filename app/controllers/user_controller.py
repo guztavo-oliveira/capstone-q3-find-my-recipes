@@ -1,19 +1,22 @@
 from http import HTTPStatus
+from datetime import timedelta
 
 from app.configs.database import db
-from app.exc.user_exc import (InsufficienDataKeyError, InvalidEmailError,
-                              InvalidKeysError, InvalidUserError,
-                              InvalidValuesError)
+from app.exc.user_exc import (
+    InsufficienDataKeyError,
+    InvalidEmailError,
+    InvalidKeysError,
+    InvalidUserError,
+    InvalidValuesError,
+)
 from app.models.feed_model import FeedModel, FeedModelSchema
 from app.models.recipe_model import RecipeModelSchema
 from app.models.user_model import UserModel, UserModelSchema
-from app.services.validations import (serialize_data,
-                                      validate_keys_and_value_type)
+from app.services.validations import serialize_data, validate_keys_and_value_type
 from app.utils.email_token import confirm_token, generate_confirmation_token
 from app.utils.send_email import send_email
 from flask import jsonify, request, url_for
-from flask_jwt_extended import (create_access_token, get_jwt_identity,
-                                jwt_required)
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
 from ipdb import set_trace
 from psycopg2.errors import InvalidTextRepresentation, UniqueViolation
 from sqlalchemy.exc import DataError, IntegrityError
@@ -78,7 +81,8 @@ def login():
             ), HTTPStatus.FORBIDDEN
 
         token = create_access_token(
-            UserModelSchema(only=("name", "email", "user_id")).dump(user)
+            UserModelSchema(only=("name", "email", "user_id")).dump(user),
+            expires_delta=timedelta(minutes=60),
         )
 
         return {"token": token}
@@ -166,7 +170,7 @@ def get_user_favorite_recipe(id: str):
 
     return jsonify(
         [
-            RecipeModelSchema(only=("title",)).dump(item)
+            RecipeModelSchema(only=("title", "recipe_id")).dump(item)
             for item in user.recipe_favorites
         ]
     )
@@ -176,7 +180,10 @@ def get_user_favorite_recipe(id: str):
 def get_recipe_by_user(id: str):
     user = UserModel.query.filter_by(user_id=id).first()
     return jsonify(
-        [RecipeModelSchema(only=("title",)).dump(item) for item in user.recipe_by_user]
+        [
+            RecipeModelSchema(only=("title", "recipe_id")).dump(item)
+            for item in user.recipe_by_user
+        ]
     )
 
 
