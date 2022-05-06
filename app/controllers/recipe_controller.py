@@ -4,7 +4,6 @@ import uuid
 from flask import jsonify, request
 from ipdb import set_trace
 from app.configs.database import db
-from app.exc.recipe_ingredient_exc import InvalidUnit
 from app.models.recipe_model import RecipeModel, RecipeModelSchema
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -31,31 +30,51 @@ def get_recipes():
     all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
         page=page, per_page=per_page
     )
-
     return (
-        jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]),
+        jsonify(
+            [
+                RecipeModelSchema(
+                    only=("title", "type", "links", "serves", "time")
+                ).dump(recipe)
+                for recipe in all_recipes.items
+            ]
+        ),
         HTTPStatus.OK,
     )
 
 
-# def recipes_by_category(category):
+def get_recipes_by_category(category):
 
-#     try:
-#         base_query = db.session.query(RecipeModel)
-#         chosen_recipes = base_query.filter_by(type=category).all()
-#         return (
-#             jsonify([RecipeModelSchema().dump(recipe) for recipe in chosen_recipes]),
-#             HTTPStatus.OK,
-#         )
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    base_query = db.session.query(RecipeModel)
 
-#     except NoResultFound:
-#         return {"msg": "category does not exist"}, HTTPStatus.NOT_FOUND
+    formated_category = unidecode.unidecode(category.lower().strip())
+
+    try:
+        chosen_recipes = base_query.filter_by(type=formated_category).paginate(
+            page=page, per_page=per_page
+        )
+
+        return (
+            jsonify(
+                [
+                    RecipeModelSchema(
+                        only=("title", "type", "links", "serves", "time")
+                    ).dump(recipe)
+                    for recipe in chosen_recipes.items
+                ]
+            ),
+            HTTPStatus.OK,
+        )
+
+    except NoResultFound:
+        return {"msg": "category does not exist"}, HTTPStatus.NOT_FOUND
 
 
 def get_a_recipe_by_id(recipe_id: str):
     try:
         recipe = db.session.get(RecipeModel, recipe_id)
-
         teste = {
             "title": recipe.title,
             "time": recipe.time,
@@ -78,52 +97,12 @@ def get_a_recipe_by_id(recipe_id: str):
                 for ingredient in recipe.ingredients
             ],
         }
-
         # print(teste)
-
         return jsonify(teste)
-
     except NoResultFound:
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
-
-    # page = request.args.get("page", 1, type=int)
-    # per_page = request.args.get("per_page", 10, type=int)
-    # base_query = db.session.query(RecipeModel)
-
-    # all_recipes = base_query.order_by(RecipeModel.recipe_id).paginate(
-    #     page=page, per_page=per_page
-    # )
-
-    # return (
-    #     jsonify([RecipeModelSchema().dump(recipe) for recipe in all_recipes.items]),
-    #     HTTPStatus.OK,
-    # )
-
-
-def get_recipes_by_category(category):
-
-    try:
-        base_query = db.session.query(RecipeModel)
-        chosen_recipes = base_query.filter_by(type=category).all()
-        return (
-            jsonify([RecipeModelSchema().dump(recipe) for recipe in chosen_recipes]),
-            HTTPStatus.OK,
-        )
-
-    except NoResultFound:
-        return {"msg": "category does not exist"}, HTTPStatus.NOT_FOUND
-
-
-# def get_a_recipe_by_id(recipe_id: str):
-#     try:
-#         recipe = db.session.get(RecipeModel, recipe_id)
-
-#         return (
-#             RecipeModelSchema(exclude=("links", "user_id")).dump(recipe),
-#             HTTPStatus.OK,
-#         )
-#     except NoResultFound:
-#         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
+    except AttributeError:
+        return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
 
 
 def get_recipe_by_ingredients():
@@ -233,7 +212,6 @@ def get_recipe_by_ingredients():
 
 @jwt_required()
 def post_a_recipe():
-
     valid_keys = [
         "title",
         "time",
@@ -245,63 +223,44 @@ def post_a_recipe():
         "user_id",
         "ingredients",
     ]
-
     session: Session = db.session
     data = request.get_json()
-
     user: dict = get_jwt_identity()
-
     try:
-
         verify_keys(data, valid_keys)
         ingredients = data.pop("ingredients")
-
         data["user_id"] = user["user_id"]
-
         recipe = RecipeModel(**data)
-
         for ingredient in ingredients:
-
             ingredient_name = IngredientModel.query.filter(
                 IngredientModel.title.like(
                     unidecode.unidecode(ingredient["title"].strip().lower())
                 )
             ).first()
-
             if not ingredient_name:
                 ingredient_name = IngredientModel(
                     title=unidecode.unidecode(ingredient["title"].strip().lower())
                 )
                 session.add(ingredient_name)
                 session.commit()
-
             recipe.ingredients.append(ingredient_name)
-
             session.add(recipe)
             session.commit()
-
             recipe_ingredient = RecipeIngredientModel.query.filter(
                 RecipeIngredientModel.ingredient_id == ingredient_name.ingredient_id,
                 RecipeIngredientModel.recipe_id == recipe.recipe_id,
             ).first()
-
             # set_trace()
-
             recipe_ingredient.amount = ingredient["amount"]
             recipe_ingredient.unit = unidecode.unidecode(ingredient["unit"].upper())
-
             if unlisted_unit(recipe_ingredient.unit):
                 return {"msg": f"Unidade deve ser uma dessas: {required_units}"}
-
             session.add(recipe_ingredient)
             session.commit()
-
     except InvalidKeysError as e:
         return e.message, HTTPStatus.BAD_REQUEST
-
     except InvalidValuesError as e:
         return e.message, HTTPStatus.BAD_REQUEST
-
     teste = {
         "title": recipe.title,
         "time": recipe.time,
@@ -324,15 +283,8 @@ def post_a_recipe():
             for ingredient in recipe.ingredients
         ],
     }
-
     # print(teste)
-
     return jsonify(teste)
-
-    # return (
-    #     RecipeModelSchema().dump(recipe),
-    #     HTTPStatus.CREATED,
-    # )
 
 
 @jwt_required()
@@ -422,7 +374,7 @@ def update_a_recipe(recipe_id):
     except InvalidKeysError as e:
         return e.message, HTTPStatus.BAD_REQUEST
 
-    except NoResultFound:
+    except (NoResultFound, AttributeError):
         return {"msg": "recipe does not exist"}, HTTPStatus.NOT_FOUND
 
     except PermissionDeniedError as e:
