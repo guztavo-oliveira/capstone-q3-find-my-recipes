@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-=======
-from app.configs.database import db
-from flask import jsonify, request, url_for
-
-from ipdb import set_trace
-from app.exc.user_exc import (
-    InvalidKeysError,
-    InvalidValuesError,
-    InvalidUserError,
-    InsufficienDataKeyError,
-    InvalidEmailError,
-)
->>>>>>> d2c4f4169ee503b70d684209a89a883796e57d0a
 from http import HTTPStatus
 
 from app.configs.database import db
@@ -23,14 +9,14 @@ from app.models.recipe_model import RecipeModelSchema
 from app.models.user_model import UserModel, UserModelSchema
 from app.services.validations import (serialize_data,
                                       validate_keys_and_value_type)
-from flask import jsonify, request
+from app.utils.email_token import confirm_token, generate_confirmation_token
+from app.utils.send_email import send_email
+from flask import jsonify, request, url_for
 from flask_jwt_extended import (create_access_token, get_jwt_identity,
                                 jwt_required)
+from ipdb import set_trace
 from psycopg2.errors import InvalidTextRepresentation, UniqueViolation
 from sqlalchemy.exc import DataError, IntegrityError
-
-from app.utils.email_token import generate_confirmation_token, confirm_token
-from app.utils.send_email import send_email
 
 
 def create_user():
